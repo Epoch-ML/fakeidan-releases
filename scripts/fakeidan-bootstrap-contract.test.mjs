@@ -31,12 +31,14 @@ describe("Fake Idan public release boundary", () => {
     assert.match(workflow, /darwin-aarch64/);
   });
 
-  it("contains no legacy ZergMeeting product identifiers", async () => {
+  it("contains no legacy ZergMeeting product identifiers outside shared tag policy", async () => {
     const paths = await collectTextFiles(repositoryRoot);
     const findings = [];
     for (const path of paths) {
       if (path.pathname.endsWith("/scripts/fakeidan-bootstrap-contract.test.mjs")) continue;
-      const text = await readFile(path, "utf8");
+      const text = (await readFile(path, "utf8"))
+        .replaceAll('"refs/tags/zergmeeting-preview-v*",', "")
+        .replaceAll('"refs/tags/zergmeeting-v*",', "");
       if (/zergmeeting|zerg meeting|zergmeet\.com|com\.zergai\.meeting/i.test(text)) {
         findings.push(join(path.pathname));
       }

@@ -79,12 +79,6 @@ const REVIEWED_PULL_REQUEST_RULE =
   "pull_request:rebase:1:dismiss-stale:optional-code-owner:last-push:resolve-threads";
 const RELEASE_STATUS_RULE =
   "required_status_checks:strict:on-create:Protected-base release policy:15368";
-const SOURCE_ZERGLANG_STATUS_RULE =
-  "required_status_checks:strict:on-create:Protected-base ZergLang release policy:15368";
-const SOURCE_DJZERG_STATUS_RULE =
-  "required_status_checks:strict:on-create:Protected-base DJZerg release policy:15368";
-const SOURCE_FAKEIDAN_STATUS_RULE =
-  "required_status_checks:strict:on-create:Protected-base FakeIdan release policy:15368";
 
 const EXPECTED_ENVIRONMENTS = Object.freeze({
   "fakeidan-preview-build": Object.freeze({
@@ -229,36 +223,6 @@ const EXPECTED_RULESETS = Object.freeze([
 
 const EXPECTED_SOURCE_RULESETS = Object.freeze([
   Object.freeze({
-    name: "Development branch authority",
-    target: "branch",
-    include: Object.freeze(["refs/heads/development"]),
-    exclude: Object.freeze([]),
-    bypass: Object.freeze([HUMAN_BYPASS]),
-    rules: Object.freeze(["creation", "update"]),
-  }),
-  Object.freeze({
-    name: "Development branch history",
-    target: "branch",
-    include: Object.freeze(["refs/heads/development"]),
-    exclude: Object.freeze([]),
-    bypass: Object.freeze([]),
-    rules: Object.freeze(["deletion", "non_fast_forward"]),
-  }),
-  Object.freeze({
-    name: "Reviewed development changes",
-    target: "branch",
-    include: Object.freeze(["refs/heads/development"]),
-    exclude: Object.freeze([]),
-    bypass: Object.freeze([HUMAN_BYPASS]),
-    rules: Object.freeze([
-      REVIEWED_PULL_REQUEST_RULE,
-      "required_linear_history",
-      SOURCE_ZERGLANG_STATUS_RULE,
-      SOURCE_DJZERG_STATUS_RULE,
-      SOURCE_FAKEIDAN_STATUS_RULE,
-    ]),
-  }),
-  Object.freeze({
     name: "Desktop release tag authority",
     target: "tag",
     include: Object.freeze([
@@ -272,6 +236,8 @@ const EXPECTED_SOURCE_RULESETS = Object.freeze([
       "refs/tags/zergchat-v*",
       "refs/tags/fakeidan-preview-v*",
       "refs/tags/fakeidan-v*",
+      "refs/tags/zergmeeting-preview-v*",
+      "refs/tags/zergmeeting-v*",
       "refs/tags/zerglang-ide-preview-v*",
       "refs/tags/zerglang-ide-v*",
       "refs/tags/zterm-preview-v*",
@@ -295,6 +261,8 @@ const EXPECTED_SOURCE_RULESETS = Object.freeze([
       "refs/tags/zergchat-v*",
       "refs/tags/fakeidan-preview-v*",
       "refs/tags/fakeidan-v*",
+      "refs/tags/zergmeeting-preview-v*",
+      "refs/tags/zergmeeting-v*",
       "refs/tags/zerglang-ide-preview-v*",
       "refs/tags/zerglang-ide-v*",
       "refs/tags/zterm-preview-v*",

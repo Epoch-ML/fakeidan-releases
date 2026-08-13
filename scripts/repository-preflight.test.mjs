@@ -117,6 +117,8 @@ const desktopTags = [
   "refs/tags/zergchat-v*",
   "refs/tags/fakeidan-preview-v*",
   "refs/tags/fakeidan-v*",
+  "refs/tags/zergmeeting-preview-v*",
+  "refs/tags/zergmeeting-v*",
   "refs/tags/zerglang-ide-preview-v*",
   "refs/tags/zerglang-ide-v*",
   "refs/tags/zterm-preview-v*",
@@ -128,12 +130,6 @@ const reviewedPullRequestRule =
   "pull_request:rebase:1:dismiss-stale:optional-code-owner:last-push:resolve-threads";
 const releaseStatusRule =
   "required_status_checks:strict:on-create:Protected-base release policy:15368";
-const sourceZergLangStatusRule =
-  "required_status_checks:strict:on-create:Protected-base ZergLang release policy:15368";
-const sourceDJZergStatusRule =
-  "required_status_checks:strict:on-create:Protected-base DJZerg release policy:15368";
-const sourceFakeIdanStatusRule =
-  "required_status_checks:strict:on-create:Protected-base FakeIdan release policy:15368";
 
 const releaseRulesets = [
   { name: "Release branch authority", target: "branch",
@@ -162,19 +158,6 @@ const releaseRulesets = [
 ].map((ruleset) => ({ enforcement: "active", ...ruleset }));
 
 const sourceRulesets = [
-  { name: "Development branch authority", target: "branch",
-    include: ["refs/heads/development"], exclude: [],
-    bypass: [reviewerBypass], rules: ["creation", "update"] },
-  { name: "Development branch history", target: "branch",
-    include: ["refs/heads/development"], exclude: [],
-    bypass: [], rules: ["deletion", "non_fast_forward"] },
-  { name: "Reviewed development changes", target: "branch",
-    include: ["refs/heads/development"], exclude: [],
-    bypass: [reviewerBypass], rules: [
-      reviewedPullRequestRule, "required_linear_history",
-      sourceZergLangStatusRule, sourceDJZergStatusRule,
-      sourceFakeIdanStatusRule,
-    ] },
   { name: "Desktop release tag authority", target: "tag",
     include: desktopTags, exclude: [],
     bypass: [reviewerBypass], rules: ["creation"] },
@@ -295,6 +278,23 @@ test("cutover and live phases require exact workflow states", () => {
     "workflow-state",
   ]);
   assert.deepEqual(errorCodes(idealState(), "live"), ["workflow-state"]);
+});
+
+test("preserves unrelated shared-source protections while requiring Fake Idan tag coverage", () => {
+  const state = idealState();
+  state.source.rulesets = state.source.rulesets
+    .filter(({ name }) => name.startsWith("Desktop release tag"));
+  state.source.rulesets.push({
+    name: "Reviewed ZergLang changes",
+    enforcement: "active",
+    target: "branch",
+    include: ["refs/heads/zerglang"],
+    exclude: [],
+    bypass: [reviewerBypass],
+    rules: ["required_linear_history"],
+  });
+
+  assert.deepEqual(errorCodes(state), []);
 });
 
 test("immutability, Pages, feed, workflow, key, secret, and rules drift fail closed", () => {
@@ -561,7 +561,7 @@ test("every ruleset identity, reference, bypass, and rule is exact", () => {
 
   for (const [label, mutate] of [
     ["expected name", (ruleset) => {
-      ruleset.name = "Development branch history";
+      ruleset.name = "Desktop release tag immutability";
     }],
     ["uppercase product name", (ruleset) => { ruleset.name = "FAKEIDAN policy"; }],
     ["default branch", (ruleset) => { ruleset.include = ["~DEFAULT_BRANCH"]; }],
