@@ -1,5 +1,6 @@
 {
   "name": "fakeidan-releases",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +17,7 @@
     "test:mutation:signing": "stryker run stryker.signing.config.mjs"
   },
   "dependencies": {
-    "@tauri-apps/cli": "2.10.1",
+    "@tauri-apps/cli": "2.11.4",
     "semver": "7.7.2",
     "tar": "7.5.22"
   },
