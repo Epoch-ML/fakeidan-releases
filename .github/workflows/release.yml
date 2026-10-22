@@ -325,7 +325,7 @@ jobs:
         run: |
           set -euo pipefail
           npm --prefix source/zapps/fakeidan audit --omit=dev --audit-level=moderate
-          cargo audit --file source/zapps/fakeidan/src-tauri/Cargo.lock
+          node release-repository/scripts/audit-macos-cargo.mjs source/zapps/fakeidan/src-tauri/Cargo.toml
           npm run test:release --prefix source/zapps/fakeidan
           npm run typecheck --prefix source/zapps/fakeidan
           npm run build --prefix source/zapps/fakeidan

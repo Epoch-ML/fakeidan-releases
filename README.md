@@ -124,6 +124,22 @@ Required controls:
 Apple Developer ID and notarization credentials come from the owning team.
 Never commit, print, or transfer private keys through artifacts.
 
+### Native dependency audit scope
+
+This repository publishes only `aarch64-apple-darwin` applications. Before building, the native
+audit obtains Cargo's locked dependency resolver graph for that exact target with the release
+build's `tauri/custom-protocol` feature enabled. If the macOS
+runner uses a different native Darwin architecture, its host graph is included as well so build
+dependencies remain covered. Every resolved package identity and dependency edge must match the
+original committed lockfile; the temporary audit lock preserves the original versions, sources,
+and registry checksums. Missing, ambiguous, duplicate, or inconsistent graph data fails closed.
+
+The normal `cargo audit` scanner runs on that complete target/host projection without package
+exclusions or advisory ignores. Platform-only dependencies absent from both resolved graphs are
+outside this Mac artifact's audit scope. A vulnerable package becomes blocking if either graph
+resolves it, including ZIP and TLS packages. Supporting another publication platform requires its
+own complete resolver graph and audit; the Mac projection is not an audit of Windows binaries.
+
 ## Initial rollout
 
 Prove both update channels in order:
