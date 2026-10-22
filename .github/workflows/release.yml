@@ -433,11 +433,13 @@ jobs:
             "${apps[0]}" \
             "$archive"
           if [[ "$FAKEIDAN_UPDATE_CHANNEL" == "stable" ]]; then
-            key_name="updater.stable.pubkey"
+            trust_name="fakeidan-stable-updater.pubkey"
           else
-            key_name="updater.preview.pubkey"
+            trust_name="fakeidan-preview-updater.pubkey"
           fi
-          cp "src-tauri/$key_name" "$source_stage/updater.pubkey"
+          # Source and generated configuration were already bound to this root.
+          # Preserve the public root's exact bytes for the strict next-stage check.
+          cp "$GITHUB_WORKSPACE/release-repository/keys/$trust_name" "$source_stage/updater.pubkey"
 
           node --input-type=module <<'NODE'
           import { writeFile } from "node:fs/promises";
