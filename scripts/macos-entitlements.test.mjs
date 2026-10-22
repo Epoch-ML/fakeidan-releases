@@ -47,16 +47,17 @@ test("publishes one exact bounded entitlement contract for FakeIdan", async () =
       sha256: createHash("sha256").update(bytes).digest("hex"),
     },
     {
-      bytes: 450,
+      bytes: 514,
       file: true,
       link: false,
       mode: 0o644,
-      sha256: "16630ad8b311b08d04ff90a420c373747311e212cc9f19366eb4ece018c8638a",
+      sha256: "8f517f0eb5013e78838d416fa1f6f82dfeb3616adfff47b3b8e2b01fcfdbdde4",
     },
   );
   assert.deepEqual(booleanEntitlements(bytes.toString("utf8")), {
     "com.apple.security.app-sandbox": false,
     "com.apple.security.network.client": true,
+    "com.apple.security.device.audio-input": true,
     "com.apple.security.cs.allow-jit": true,
     "com.apple.security.cs.allow-unsigned-executable-memory": true,
   });
