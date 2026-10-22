@@ -221,6 +221,7 @@ describe("FakeIdan source-build release contract", () => {
       "plutil -convert json",
       "assert.deepEqual(actual, expected)",
       '"com.apple.security.network.client": true',
+      '"com.apple.security.device.audio-input": true',
       '"com.apple.security.cs.allow-jit": true',
       '"com.apple.security.cs.allow-unsigned-executable-memory": true',
       '"com.apple.security.app-sandbox": false',
@@ -245,10 +246,26 @@ describe("FakeIdan source-build release contract", () => {
       "plutil -convert json",
       "assert.deepEqual(actual, expected)",
       '"com.apple.security.network.client": true',
+      '"com.apple.security.device.audio-input": true',
     ]) {
       assert.ok(smoke.run.includes(token), `fresh smoke must enforce ${token}`);
     }
     assert.doesNotMatch(smoke.run, /source\/zapps|git -C source|npm run|cargo/);
+  });
+
+  it("requires the voice-message microphone purpose before signing and launching", () => {
+    const extraction = requireJob("apple-sign").steps.find((step) =>
+      typeof step.run === "string" && step.run.includes('signature_details="$RUNNER_TEMP/fakeidan-source-signature.txt"')
+    );
+    const smoke = requireStep(
+      requireJob("signed-smoke"),
+      "Audit and launch the signed Apple Silicon application",
+    );
+    for (const step of [extraction, smoke]) {
+      assert.ok(step, "the extracted app must be audited before signing or launching");
+      assert.match(step.run, /Print :NSMicrophoneUsageDescription/);
+      assert.match(step.run, /Record voice messages you choose to send to your bots\./);
+    }
   });
 
   it("signs and publishes the exact Apple Silicon updater archive", () => {
