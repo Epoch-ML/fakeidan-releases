@@ -1198,6 +1198,11 @@ jobs:
     needs:
       - validate
       - sign-updater
+    if: >-
+      always() &&
+      !cancelled() &&
+      needs.validate.result == 'success' &&
+      needs.sign-updater.result == 'success'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -1682,6 +1687,11 @@ jobs:
     needs:
       - validate
       - publish
+    if: >-
+      always() &&
+      !cancelled() &&
+      needs.validate.result == 'success' &&
+      needs.publish.result == 'success'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -1905,6 +1915,11 @@ jobs:
     needs:
       - validate
       - promote-feed
+    if: >-
+      always() &&
+      !cancelled() &&
+      needs.validate.result == 'success' &&
+      needs.promote-feed.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     permissions:
