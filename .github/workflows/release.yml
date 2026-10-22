@@ -301,15 +301,17 @@ jobs:
       - name: Install pinned Rust toolchain
         run: |
           set -euo pipefail
-          rustup toolchain install 1.88.0 \
+          rustup toolchain install 1.94.1 \
             --profile minimal \
             --component clippy,rustfmt \
             --target aarch64-apple-darwin
-          rustup default 1.88.0
+          rustup default 1.94.1
 
       - name: Install locked dependencies and security tooling
         run: |
           set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund --prefix source/zapps/zergbox
+          npm run client:build --prefix source/zapps/zergbox
           npm ci --prefix source/zapps/fakeidan
           npm ci --ignore-scripts --prefix release-repository
           (

@@ -17,17 +17,22 @@ async function runDependencyStep({ failClientBuild = false } = {}) {
   const directory = await mkdtemp(join(tmpdir(), "fakeidan-clean-source-"));
   try {
     await mkdir(join(directory, "bin"));
+    await mkdir(join(directory, "release-repository"));
     await mkdir(join(directory, "source/zapps/zergbox/client"), { recursive: true });
     await mkdir(join(directory, "source/zapps/fakeidan"), { recursive: true });
     // npm is the process boundary: model its file-dependency link and sibling build output.
     const npm = join(directory, "bin/npm");
     await writeFile(npm, `#!${process.execPath}
-import { mkdir, symlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 const args = process.argv.slice(2);
 const prefixIndex = args.indexOf("--prefix");
 const prefix = prefixIndex === -1 ? process.cwd() : resolve(args[prefixIndex + 1]);
+if (prefix.endsWith("/source/zapps/zergbox") && args.includes("ci")) {
+  await writeFile(resolve(prefix, "dependencies-installed"), "locked dependencies");
+}
 if (prefix.endsWith("/source/zapps/zergbox") && args.includes("client:build")) {
+  await readFile(resolve(prefix, "dependencies-installed"));
   if (process.env.FAIL_CLIENT_BUILD === "true") {
     console.error("client compiler failed: fixture syntax error");
     process.exit(41);
