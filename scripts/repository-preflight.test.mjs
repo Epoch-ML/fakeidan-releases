@@ -121,6 +121,8 @@ const desktopTags = [
   "refs/tags/zergmeeting-v*",
   "refs/tags/zerglang-ide-preview-v*",
   "refs/tags/zerglang-ide-v*",
+  "refs/tags/zerglang-preview-v*",
+  "refs/tags/zerglang-v*",
   "refs/tags/zterm-preview-v*",
   "refs/tags/zterm-v*",
 ];
