@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "product": "fakeidan-desktop",
+  "channel": "preview",
+  "version": "0.1.0-preview.3",
+  "release_tag": "fakeidan-preview-v0.1.0-preview.3",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "8ec6f7d9f334f07cd54deec78d20bd72903dc4c5",
+  "source_ref": "refs/tags/fakeidan-preview-v0.1.0-preview.3",
+  "requested_at": "2026-10-22T22:22:19.000Z",
+  "updater_public_key_sha256": "2b1fd2637916039904ab4a37dddd83e98c5bcf5f964550ec4a3de4a89ad19ec0"
+}
