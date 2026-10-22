@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -12,7 +12,7 @@ const workflow = parse(await readFile(new URL("../.github/workflows/release.yml"
 const auditStep = workflow.jobs["build-macos"].steps.find(({ name }) => name === "Test and audit the exact source");
 
 async function qualifyAudit({ vulnerableTls = false, reachableZip = false, malformed, hostZip = false } = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "fakeidan-macos-audit-"));
+  const directory = await realpath(await mkdtemp(join(tmpdir(), "fakeidan-macos-audit-")));
   try {
     const source = join(directory, "source/zapps/fakeidan/src-tauri");
     await mkdir(source, { recursive: true });
@@ -75,7 +75,7 @@ checksum = "${"b".repeat(64)}"
 import { readFile } from "node:fs/promises";
 const args = process.argv.slice(2);
 if (args[0] === "metadata") {
-  if (!args.includes("--locked") || !args.includes("--filter-platform")) process.exit(42);
+  if (!args.includes("--locked") || !args.includes("--filter-platform") || args[args.indexOf("--features") + 1] !== "tauri/custom-protocol") process.exit(42);
   const host = args[args.indexOf("--filter-platform") + 1] === "x86_64-apple-darwin";
   process.stdout.write(await readFile(host ? process.env.HOST_METADATA : process.env.TARGET_METADATA));
 } else if (args[0] === "audit") {
