@@ -7,6 +7,11 @@ Silicon macOS 11+ (`darwin-aarch64`) and connects to
 `zapps/fakeidan`; this repository holds reviewed release requests, public
 artifacts, independent channel updater public keys, and GitHub Pages feeds.
 
+The desktop microphone entitlement is limited to recording voice messages the user chooses to
+send. macOS asks for permission when recording starts; the application declares that purpose in
+its Info.plist. The signing and fresh-extraction checks require that exact purpose and audio-input
+entitlement. No camera, screen-capture, general file-read, or shell entitlement is added.
+
 ## Release flow
 
 1. A protected **fakeidan-v\*** or **fakeidan-preview-v\*** source tag runs the

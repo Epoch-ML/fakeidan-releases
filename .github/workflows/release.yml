@@ -531,6 +531,8 @@ jobs:
             "com.zergai.fakeidan"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = \
             "$VERSION"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$plist")" = \
+            "Record voice messages you choose to send to your bots."
           architectures="$(lipo -archs "$app/Contents/MacOS/fakeidan")"
           test "$(wc -w <<<"$architectures" | tr -d ' ')" -eq 1
           grep -qw arm64 <<<"$architectures"
@@ -633,6 +635,7 @@ jobs:
           const expected = {
             "com.apple.security.app-sandbox": false,
             "com.apple.security.network.client": true,
+            "com.apple.security.device.audio-input": true,
             "com.apple.security.cs.allow-jit": true,
             "com.apple.security.cs.allow-unsigned-executable-memory": true,
           };
@@ -830,6 +833,8 @@ jobs:
             "com.zergai.fakeidan"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = \
             "$VERSION"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$plist")" = \
+            "Record voice messages you choose to send to your bots."
           architectures="$(lipo -archs "$executable")"
           test "$(wc -w <<<"$architectures" | tr -d ' ')" -eq 1
           grep -qw arm64 <<<"$architectures"
@@ -852,6 +857,7 @@ jobs:
           const expected = {
             "com.apple.security.app-sandbox": false,
             "com.apple.security.network.client": true,
+            "com.apple.security.device.audio-input": true,
             "com.apple.security.cs.allow-jit": true,
             "com.apple.security.cs.allow-unsigned-executable-memory": true,
           };
