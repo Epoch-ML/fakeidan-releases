@@ -297,6 +297,21 @@ test("preserves unrelated shared-source protections while requiring Fake Idan ta
   assert.deepEqual(errorCodes(state), []);
 });
 
+test("accepts the shared ZergLang release namespaces without relaxing Fake Idan protection", () => {
+  const state = idealState();
+  for (const ruleset of state.source.rulesets) {
+    for (const ref of ["refs/tags/zerglang-preview-v*", "refs/tags/zerglang-v*"]) {
+      if (!ruleset.include.includes(ref)) ruleset.include.push(ref);
+    }
+  }
+  assert.deepEqual(errorCodes(state), []);
+
+  state.source.rulesets.find(({ name }) => name === "Desktop release tag immutability")
+    .include = state.source.rulesets.find(({ name }) => name === "Desktop release tag immutability")
+      .include.filter((ref) => ref !== "refs/tags/fakeidan-v*");
+  assert.deepEqual(errorCodes(state), ["source-ruleset-contract"]);
+});
+
 test("immutability, Pages, feed, workflow, key, secret, and rules drift fail closed", () => {
   const state = idealState();
   state.release.immutableReleases.enabled = false;
