@@ -142,12 +142,17 @@ own complete resolver graph and audit; the Mac projection is not an audit of Win
 
 ## Initial rollout
 
-Prove both update channels in order:
+Qualify the initial stable Mac download with the notarized stable pair:
 
-1. `0.1.0-preview.1`
-2. `0.1.0-preview.2`
-3. `0.1.0`
-4. `0.1.1`
+1. Publish and install `0.1.0` from its canonical public installer.
+2. Publish `0.1.1`, then verify the installed `0.1.0` application downloads,
+   verifies, stages, and installs that update through the stable feed.
+
+Preview is a separate, ad-hoc signed channel and does not inherit stable
+qualification. Before promoting a future preview download, independently prove
+the same native update sequence from `0.1.0-preview.2` to `0.1.0-preview.3`.
+The earlier preview attempt failed before signing or publication, so it is not
+evidence of a working preview installer or updater.
 
 Do not publish or dispatch a release until every required environment and
 source-side policy passes live preflight.
