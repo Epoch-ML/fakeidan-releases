@@ -567,7 +567,7 @@ describe("FakeIdan release workflow contract", () => {
   it("isolates updater signing from private source and pins GitHub-owned actions", () => {
     assert.doesNotMatch(workflow, /uses: actions\/[A-Za-z0-9_-]+@v\d/);
     assert.doesNotMatch(workflow, /dtolnay\/rust-toolchain/);
-    assert.match(workflow, /rustup toolchain install 1\.88\.0/);
+    assert.match(workflow, /rustup toolchain install 1\.94\.1/);
     const signingSecretUses = workflow.match(
       /secrets\.FAKEIDAN_(?:PREVIEW|STABLE)_TAURI_SIGNING_PRIVATE_KEY(?:_PASSWORD)?/g,
     ) ?? [];
