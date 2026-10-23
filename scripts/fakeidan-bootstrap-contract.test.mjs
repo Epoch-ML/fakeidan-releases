@@ -23,7 +23,7 @@ async function collectTextFiles(directoryUrl) {
 describe("Fake Idan public release boundary", () => {
   it("binds the repository, source path, bundle, and channel tag grammar", async () => {
     const workflow = await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
-    assert.match(workflow, /Publish Fake Idan Desktop Release/);
+    assert.match(workflow, /Publish Zerg Bot Desktop Release/);
     assert.match(workflow, /Epoch-ML\/fakeidan-releases/);
     assert.match(workflow, /source\/zapps\/fakeidan\/src-tauri\/tauri\.conf\.json/);
     assert.match(workflow, /com\.zergai\.fakeidan/);

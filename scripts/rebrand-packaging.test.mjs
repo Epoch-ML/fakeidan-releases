@@ -59,5 +59,6 @@ test('collector and canonical payload verification agree on new product names an
   const metadata = JSON.parse(await readFile(join(outputDirectory, 'release-metadata.json'), 'utf8'));
   assert.equal(metadata.product, 'Zerg Bot');
   const verification = await verifyReleasePayload({ directory: outputDirectory, request, releaseRepository: 'Epoch-ML/fakeidan-releases' });
-  assert.equal(verification.manifest.version, '0.2.0');
+  assert.equal(verification.archiveName, 'ZergBot_0.2.0_aarch64.app.tar.gz');
+  assert.equal(verification.diskImageName, 'ZergBot_0.2.0_aarch64.dmg');
 });

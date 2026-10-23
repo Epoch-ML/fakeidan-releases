@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { releasePackaging } from "./release-packaging.mjs";
 
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
@@ -148,8 +149,8 @@ export async function verifyReleasePayload(options) {
   const archiveName = archives[0];
   const signatureName = `${archiveName}.sig`;
   const diskImageName = diskImages[0];
-  const expectedArchiveName = `FakeIdan_${request.version}_aarch64.app.tar.gz`;
-  const expectedDiskImageName = `FakeIdan_${request.version}_aarch64.dmg`;
+  const expectedArchiveName = `${releasePackaging(request.version).assetPrefix}_${request.version}_aarch64.app.tar.gz`;
+  const expectedDiskImageName = `${releasePackaging(request.version).assetPrefix}_${request.version}_aarch64.dmg`;
   if (archiveName !== expectedArchiveName || diskImageName !== expectedDiskImageName) {
     throw new ReleasePayloadError(
       "release payload artifact names do not match the requested Apple Silicon build",
@@ -219,7 +220,7 @@ export async function verifyReleasePayload(options) {
     ),
     "release metadata",
   );
-  if (metadata?.schema_version !== 1 || metadata.product !== "Fake Idan") {
+  if (metadata?.schema_version !== 1 || metadata.product !== releasePackaging(request.version).productName) {
     throw new ReleasePayloadError("release metadata schema or product is invalid");
   }
   if (

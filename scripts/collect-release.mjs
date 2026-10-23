@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { releasePackaging } from "./release-packaging.mjs";
 
 import { createHash } from "node:crypto";
 import {
@@ -58,7 +59,7 @@ async function assertExactInputEntries(directory, expectedNames) {
 }
 
 function assertBuildMetadata(metadata, request) {
-  if (metadata?.schema_version !== 1 || metadata.product !== "Fake Idan") {
+  if (metadata?.schema_version !== 1 || metadata.product !== releasePackaging(request.version).productName) {
     throw new Error("build metadata schema or product is invalid");
   }
   if (metadata.version !== request.version) {
@@ -131,7 +132,7 @@ export async function collectSignedRelease(options) {
     (name) => name.endsWith(".app.tar.gz"),
     "macOS updater archive",
   );
-  const expectedArchiveName = `FakeIdan_${request.version}_aarch64.app.tar.gz`;
+  const expectedArchiveName = `${releasePackaging(request.version).assetPrefix}_${request.version}_aarch64.app.tar.gz`;
   if (basename(archivePath) !== expectedArchiveName) {
     throw new Error(`updater archive name must be ${expectedArchiveName}`);
   }
@@ -145,7 +146,7 @@ export async function collectSignedRelease(options) {
     (name) => name.endsWith(".dmg"),
     "macOS disk image",
   );
-  const expectedDiskImageName = `FakeIdan_${request.version}_aarch64.dmg`;
+  const expectedDiskImageName = `${releasePackaging(request.version).assetPrefix}_${request.version}_aarch64.dmg`;
   if (basename(diskImagePath) !== expectedDiskImageName) {
     throw new Error(`disk image name must be ${expectedDiskImageName}`);
   }
@@ -194,7 +195,7 @@ export async function collectSignedRelease(options) {
   const metadataPath = join(outputDirectory, "release-metadata.json");
   await writeFile(metadataPath, `${JSON.stringify({
     schema_version: 1,
-    product: "Fake Idan",
+    product: releasePackaging(request.version).productName,
     version: request.version,
     channel: request.channel,
     platform: "darwin-aarch64",

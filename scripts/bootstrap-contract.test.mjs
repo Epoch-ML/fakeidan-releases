@@ -24,6 +24,6 @@ describe("FakeIdan public release boundary", () => {
     const workflow = readFileSync(".github/workflows/release.yml", "utf8");
     assert.match(workflow, /zapps\/fakeidan/);
     assert.match(workflow, /fakeidan-preview-updater/);
-    assert.match(workflow, /FakeIdan_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
+    assert.match(workflow, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
   });
 });

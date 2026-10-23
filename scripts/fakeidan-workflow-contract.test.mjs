@@ -134,7 +134,7 @@ describe("FakeIdan source-build release contract", () => {
     for (const token of [
       "source/zapps/fakeidan/src-tauri/tauri.conf.json",
       "config.productName",
-      "Fake Idan",
+      "process.env.PACKAGING_SOURCE_PRODUCT_NAME",
       "config.identifier",
       "com.zergai.fakeidan",
       "config.bundle.macOS.infoPlist",
@@ -158,7 +158,7 @@ describe("FakeIdan source-build release contract", () => {
     });
     assert.match(config.run, /npm run release:config/);
     assert.match(config.run, /com\.zergai\.fakeidan/);
-    assert.match(config.run, /Fake Idan/);
+    assert.match(config.run, /PACKAGING_PRODUCT_NAME/);
     assert.doesNotMatch(JSON.stringify(build), /UPDATER_ENABLED/);
     assert.doesNotMatch(JSON.stringify(build), /TAURI_UPDATER_PUBKEY/);
   });
@@ -177,9 +177,9 @@ describe("FakeIdan source-build release contract", () => {
     const stage = requireStep(build, "Package a bounded unsigned source stage");
     assert.equal(stage["working-directory"], "source/zapps/fakeidan");
     assert.match(stage.run, /target\/aarch64-apple-darwin\/release\/bundle/);
-    assert.match(stage.run, /FakeIdan_\$\{FAKEIDAN_DESKTOP_VERSION\}_aarch64\.source\.app\.tar\.gz/);
+    assert.match(stage.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{FAKEIDAN_DESKTOP_VERSION\}_aarch64\.source\.app\.tar\.gz/);
     assert.match(stage.run, /platform: "darwin-aarch64"/);
-    assert.match(stage.run, /product: "Fake Idan"/);
+    assert.match(stage.run, /product: process\.env\.PACKAGING_PRODUCT_NAME/);
 
     const resources = requireStep(build, "Verify the exact bundled FakeIdan release assets");
     assert.match(resources.run, /Contents\/MacOS\/fakeidan/);
@@ -191,14 +191,14 @@ describe("FakeIdan source-build release contract", () => {
   it("validates the Apple Silicon slice before Apple credentials and signs the disk image", () => {
     const apple = requireJob("apple-sign");
     const hostile = requireStep(apple, "Verify and extract the hostile source stage");
-    assert.match(hostile.run, /FakeIdan_\$\{VERSION\}_aarch64\.source\.app\.tar\.gz/);
+    assert.match(hostile.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.source\.app\.tar\.gz/);
     assert.match(hostile.run, /lipo -archs/);
     assert.match(hostile.run, /arm64/);
     assert.match(hostile.run, /test "\$\(wc -w .*" -eq 1/);
     assert.doesNotMatch(JSON.stringify(hostile), /FAKEIDAN_APPLE_/);
 
     const signing = requireStep(apple, "Apply preview ad-hoc or fail-closed stable Apple signing");
-    assert.match(signing.run, /FakeIdan_\$\{VERSION\}_aarch64\.dmg/);
+    assert.match(signing.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.dmg/);
     assert.match(signing.run, /codesign --force --timestamp --sign "\$identity" "\$dmg"/);
     assert.match(signing.run, /notarytool submit "\$dmg"/);
     assert.match(signing.run, /stapler validate "\$dmg"/);
@@ -277,8 +277,8 @@ describe("FakeIdan source-build release contract", () => {
       requireJob("sign-updater-stable"),
       "Sign only the stable updater archive",
     );
-    assert.match(previewSign.run, /FakeIdan_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
-    assert.match(stableSign.run, /FakeIdan_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
+    assert.match(previewSign.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
+    assert.match(stableSign.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
     const collect = requireStep(
       requireJob("sign-updater"),
       "Collect and verify the immutable release payload",
@@ -315,7 +315,7 @@ describe("FakeIdan source-build release contract", () => {
     assert.equal(cleanup.if, "always()");
     assert.doesNotMatch(signing.run, /package-macos\.mjs|build-metadata\.json/);
     assert.doesNotMatch(JSON.stringify(packaging), /secrets\.|FAKEIDAN_APPLE_/);
-    assert.match(packaging.run, /FakeIdan_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
+    assert.match(packaging.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
     assert.match(packaging.run, /darwin-aarch64/);
     assert.match(packaging.run, /SHA256SUMS/);
   });

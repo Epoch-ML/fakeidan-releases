@@ -1,9 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
+import { releasePackaging } from "./release-packaging.mjs";
+
 export function makeReleaseNotes({ version, channel, sourceSha }) {
   return [
-    `FakeIdan ${version} (${channel}, Apple Silicon macOS)`,
+    `${releasePackaging(version).productName === "Zerg Bot" ? "Zerg Bot" : "FakeIdan"} ${version} (${channel}, Apple Silicon macOS)`,
     "",
     `Built from Epoch-ML/zerg commit ${sourceSha} after source, dependency, Apple platform-signature, updater-signature, and artifact verification.`,
     "",

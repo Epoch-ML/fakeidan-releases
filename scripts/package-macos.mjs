@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { releasePackaging } from "./release-packaging.mjs";
 
 import { lstat, mkdir, readdir, rm } from "node:fs/promises";
 import { basename, dirname, join, resolve, sep } from "node:path";
@@ -109,7 +110,7 @@ async function sortedTree(root, budgets) {
   return { paths, ...state };
 }
 
-function normalizeArchivePath(path) {
+function normalizeArchivePath(path, applicationName) {
   if (
     typeof path !== "string" ||
     path.length === 0 ||
@@ -118,27 +119,27 @@ function normalizeArchivePath(path) {
     path.includes("\\") ||
     path.startsWith("/")
   ) {
-    throw new Error("archive path must remain under Fake Idan.app/");
+    throw new Error(`archive path must remain under ${applicationName}/`);
   }
   const withoutTrailingSlash = path.endsWith("/") ? path.slice(0, -1) : path;
   const segments = withoutTrailingSlash.split("/");
   if (
     segments.length === 0 ||
-    segments[0] !== "Fake Idan.app" ||
+    segments[0] !== applicationName ||
     segments.some((segment) => segment === "" || segment === "." || segment === "..")
   ) {
-    throw new Error("archive path must remain under Fake Idan.app/");
+    throw new Error(`archive path must remain under ${applicationName}/`);
   }
   return withoutTrailingSlash;
 }
 
-function makeArchiveValidator(budgets) {
+function makeArchiveValidator(budgets, applicationName) {
   const seen = new Set();
   const entryTypes = new Map();
   const state = { entryCount: 0, uncompressedBytes: 0 };
   return {
     accept(entry) {
-      const path = normalizeArchivePath(entry.path);
+      const path = normalizeArchivePath(entry.path, applicationName);
       if (seen.has(path)) {
         throw new Error(`archive contains a duplicate path: ${path}`);
       }
@@ -176,11 +177,11 @@ function makeArchiveValidator(budgets) {
       return true;
     },
     result() {
-      if (!seen.has("Fake Idan.app")) {
-        throw new Error("archive must contain exactly one Fake Idan.app root");
+      if (!seen.has(applicationName)) {
+        throw new Error(`archive must contain exactly one ${applicationName} root`);
       }
-      if (entryTypes.get("Fake Idan.app") !== "directory") {
-        throw new Error("archive Fake Idan.app root must be a directory");
+      if (entryTypes.get(applicationName) !== "directory") {
+        throw new Error(`archive ${applicationName} root must be a directory`);
       }
       return { ...state };
     },
@@ -200,10 +201,10 @@ async function assertFreshOutputDirectory(outputDirectory) {
   throw new Error("extraction output directory must not already exist");
 }
 
-async function inspectExtractedTree(root, budgets) {
+async function inspectExtractedTree(root, budgets, applicationName) {
   const result = await sortedTree(root, budgets);
-  if (basename(root) !== "Fake Idan.app") {
-    throw new Error("extracted application root must be Fake Idan.app");
+  if (basename(root) !== applicationName) {
+    throw new Error(`extracted application root must be ${applicationName}`);
   }
   return result;
 }
@@ -265,6 +266,7 @@ export async function packageMacApplication(options) {
 }
 
 export async function extractSourceApplication(options) {
+  const applicationName = releasePackaging(options.version ?? '0.1.0').applicationName;
   const budgets = budgetsFrom(options);
   const archivePath = requirePath(options.archivePath, "source archive path is required");
   const outputDirectory = requirePath(
@@ -282,7 +284,7 @@ export async function extractSourceApplication(options) {
     throw new Error(`archive exceeds ${budgets.maxArchiveBytes} bytes`);
   }
 
-  const inspection = makeArchiveValidator(budgets);
+  const inspection = makeArchiveValidator(budgets, applicationName);
   list({
     file: archivePath,
     onentry: (entry) => inspection.accept(entry),
@@ -295,7 +297,7 @@ export async function extractSourceApplication(options) {
   await assertFreshOutputDirectory(outputDirectory);
   await mkdir(outputDirectory, { recursive: false });
   try {
-    const extraction = makeArchiveValidator(budgets);
+    const extraction = makeArchiveValidator(budgets, applicationName);
     await extract({
       cwd: outputDirectory,
       file: archivePath,
@@ -310,8 +312,8 @@ export async function extractSourceApplication(options) {
     ) {
       throw new Error("archive changed between validation and extraction");
     }
-    const applicationPath = join(outputDirectory, "Fake Idan.app");
-    const filesystemTree = await inspectExtractedTree(applicationPath, budgets);
+    const applicationPath = join(outputDirectory, applicationName);
+    const filesystemTree = await inspectExtractedTree(applicationPath, budgets, applicationName);
     if (
       filesystemTree.entryCount !== inspected.entryCount ||
       filesystemTree.uncompressedBytes !== inspected.uncompressedBytes
