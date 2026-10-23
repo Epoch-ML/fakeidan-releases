@@ -1,11 +1,11 @@
 {
-  "version": "0.1.1",
+  "version": "0.1.3",
   "notes": "",
-  "pub_date": "2026-10-22T22:22:19.000Z",
+  "pub_date": "2026-10-23T22:53:12.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSVElISHp1Tmpuclg0MUJjdmt1cm1jYldKbzlzZW83TkRjQzR5a2k1eW9uZW9LRW5UZURjOUxzWTBqQXA2VkRKYnFnVGFiNWQzL3dhSkRuemJNdExPZ1N1dFc2ZFJFbWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzEzNjgyCWZpbGU6RmFrZUlkYW5fMC4xLjFfYWFyY2g2NC5hcHAudGFyLmd6CllMbE9tV0Vzekg3WVJIRU1TSlgrb3pxWWhiSjlPcXpJRXhsSmZrZ01jOU94K0NlSlFZQjNha2kzYlFPU3RGUHVKOUJ4RVNsUEhEbG9HWU5oSE5WdURBPT0K",
-      "url": "https://github.com/Epoch-ML/fakeidan-releases/releases/download/fakeidan-v0.1.1/FakeIdan_0.1.1_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSVElISHp1Tmpuclh3S3RYTFlpRVJaem0xbUVTeFpCeHh5SzFxa2dXMTdBVWhXWmM2VWltWVdkZ0FQempHMWJGWHZxWW0xNGloNjF5MVJ6V1RwTGxZTktzRTNGaEVkckE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzk3Mzc4CWZpbGU6RmFrZUlkYW5fMC4xLjNfYWFyY2g2NC5hcHAudGFyLmd6Ck9iNGRTcFliL0tCVU02L25PbHYzZmhnZWk0OFZLeUhmR25GZEh0NzRZS1pFaktiWlRYMHY1UHZjYzd5QlJDcEVkSUcyOVRWSDFlZXA0cTliSGZFSUNnPT0K",
+      "url": "https://github.com/Epoch-ML/fakeidan-releases/releases/download/fakeidan-v0.1.3/FakeIdan_0.1.3_aarch64.app.tar.gz"
     }
   }
 }
