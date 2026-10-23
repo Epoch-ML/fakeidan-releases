@@ -114,7 +114,7 @@ test("validates base identity before generating release-only configuration", () 
     "build-macos",
     "Bind source desktop identity to the public entitlement contract",
   );
-  assert.match(bind.run, /productName[\s\S]*Fake Idan/);
+  assert.match(bind.run, /productName[\s\S]*PACKAGING_SOURCE_PRODUCT_NAME/);
   assert.match(bind.run, /identifier[\s\S]*com\.zergai\.fakeidan/);
   assert.doesNotMatch(bind.run, /beforeBuildCommand/);
   assert.doesNotMatch(bind.run, /release:stage/);

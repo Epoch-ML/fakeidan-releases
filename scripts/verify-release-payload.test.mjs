@@ -64,9 +64,9 @@ async function makePayload(label, payloadRequest = request()) {
   temporaryDirectories.push(root);
   const directory = join(root, "release");
   await mkdir(directory);
-  const archiveName = `FakeIdan_${payloadRequest.version}_aarch64.app.tar.gz`;
+  const archiveName = `ZergBot_${payloadRequest.version}_aarch64.app.tar.gz`;
   const signatureName = `${archiveName}.sig`;
-  const diskImageName = `FakeIdan_${payloadRequest.version}_aarch64.dmg`;
+  const diskImageName = `ZergBot_${payloadRequest.version}_aarch64.dmg`;
   const archive = Buffer.from(`gzip archive bytes from ${label}`);
   const signature = Buffer.from(
     `untrusted comment: signature from tauri secret key\n${label.padEnd(96, "-")}\n`,
@@ -92,7 +92,7 @@ async function makePayload(label, payloadRequest = request()) {
     join(directory, "release-metadata.json"),
     `${JSON.stringify({
       schema_version: 1,
-      product: "Fake Idan",
+      product: "Zerg Bot",
       version: payloadRequest.version,
       channel: payloadRequest.channel,
       platform: "darwin-aarch64",
@@ -189,9 +189,9 @@ describe("canonical FakeIdan release payload verification", () => {
     assert.equal(result.archiveName, fixture.archiveName);
     assert.equal(result.hashes[fixture.archiveName], sha256(fixture.archive));
     assert.deepEqual(result.assetNames, [
-      `FakeIdan_${version}_aarch64.app.tar.gz`,
-      `FakeIdan_${version}_aarch64.app.tar.gz.sig`,
-      `FakeIdan_${version}_aarch64.dmg`,
+      `ZergBot_${version}_aarch64.app.tar.gz`,
+      `ZergBot_${version}_aarch64.app.tar.gz.sig`,
+      `ZergBot_${version}_aarch64.dmg`,
       "checksums.txt",
       "latest.json",
       "release-metadata.json",
@@ -438,8 +438,8 @@ describe("canonical FakeIdan release payload verification", () => {
     }
 
     for (const [fixtureField, wrongName] of [
-      ["archiveName", "FakeIdan_9.9.9_aarch64.app.tar.gz"],
-      ["diskImageName", "FakeIdan_9.9.9_aarch64.dmg"],
+      ["archiveName", "ZergBot_9.9.9_aarch64.app.tar.gz"],
+      ["diskImageName", "ZergBot_9.9.9_aarch64.dmg"],
     ]) {
       const wrongVersionName = await makePayload("canonical release");
       await rename(
@@ -757,7 +757,7 @@ describe("canonical FakeIdan release payload verification", () => {
       releaseRepository,
       request: stableRequest,
     });
-    assert.equal(stableResult.archiveName, "FakeIdan_0.2.0_aarch64.app.tar.gz");
+    assert.equal(stableResult.archiveName, "ZergBot_0.2.0_aarch64.app.tar.gz");
 
     const nonArray = await makePayload("canonical release");
     await rewriteJson(nonArray.directory, "release-metadata.json", (metadata) => {

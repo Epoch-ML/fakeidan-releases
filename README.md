@@ -1,9 +1,13 @@
-# Fake Idan Releases
+# Zerg Bot Releases
 
 This public repository is the distribution and updater trust boundary for the
-native Fake Idan desktop companion. The first release boundary supports Apple
+native Zerg Bot desktop companion (formerly Fake Idan). The release boundary supports Apple
 Silicon macOS 11+ (`darwin-aarch64`) and connects to
-**https://fakeidan.com**. Private source remains in **Epoch-ML/zerg** under
+**https://bot.zergai.com** from 0.1.2 onward. The 0.1.x installers retain their legacy
+Fake Idan packaging; 0.2.0 and later use Zerg Bot packaging. Existing bundle IDs,
+executable names, updater keys, repository and feed endpoints remain unchanged.
+Legacy https://fakeidan.com/desktop remains directly served for old native clients.
+Private source remains in **Epoch-ML/zerg** under
 `zapps/fakeidan`; this repository holds reviewed release requests, public
 artifacts, independent channel updater public keys, and GitHub Pages feeds.
 

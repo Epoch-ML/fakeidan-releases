@@ -26,6 +26,7 @@ async function withBuildFixture(channel, callback, { wrongSourceKey = false } = 
     await mkdir(join(directory, "release-repository/scripts"), { recursive: true });
     await mkdir(join(directory, "release-repository/keys"));
     await writeFile(join(directory, "release-repository/scripts/package-macos.mjs"), await readFile(join(repository, "scripts/package-macos.mjs")));
+    await writeFile(join(directory, "release-repository/scripts/release-packaging.mjs"), await readFile(join(repository, "scripts/release-packaging.mjs")));
     await symlink(join(repository, "node_modules"), join(directory, "release-repository/node_modules"));
     for (const channelName of ["preview", "stable"]) {
       const keyName = `fakeidan-${channelName}-updater.pubkey`;
@@ -42,6 +43,7 @@ async function withBuildFixture(channel, callback, { wrongSourceKey = false } = 
     const releaseTag = channel === "stable" ? `fakeidan-v${version}` : `fakeidan-preview-v${version}`;
     await writeFile(join(tauri, "tauri.release.conf.json"), JSON.stringify({
       productName: "Fake Idan",
+      build: { frontendDist: "https://bot.zergai.com/desktop" },
       identifier: "com.zergai.fakeidan",
       version,
       plugins: { updater: {
@@ -57,6 +59,11 @@ async function withBuildFixture(channel, callback, { wrongSourceKey = false } = 
       ...process.env,
       PATH: `${join(directory, "bin")}:${process.env.PATH}`,
       GITHUB_WORKSPACE: directory,
+      PACKAGING_PRODUCT_NAME: "Fake Idan",
+      PACKAGING_APP_BUNDLE: "Fake Idan.app",
+      PACKAGING_ASSET_PREFIX: "FakeIdan",
+      PACKAGING_SOURCE_PRODUCT_NAME: "Zerg Bot",
+      PACKAGING_DESKTOP_URL: "https://bot.zergai.com/desktop",
       FAKEIDAN_UPDATE_CHANNEL: channel,
       FAKEIDAN_VERSION: version,
       FAKEIDAN_DESKTOP_VERSION: version,

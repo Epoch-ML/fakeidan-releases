@@ -1,4 +1,4 @@
-name: Publish Fake Idan Desktop Release
+name: Publish Zerg Bot Desktop Release
 
 on:
   workflow_dispatch:
@@ -30,6 +30,12 @@ jobs:
       source_sha: ${{ steps.request.outputs.source_sha }}
       updater_public_key_sha256: ${{ steps.request.outputs.updater_public_key_sha256 }}
       version: ${{ steps.request.outputs.version }}
+      product_name: ${{ steps.packaging.outputs.product_name }}
+      release_name: ${{ steps.packaging.outputs.release_name }}
+      app_bundle: ${{ steps.packaging.outputs.app_bundle }}
+      asset_prefix: ${{ steps.packaging.outputs.asset_prefix }}
+      source_product_name: ${{ steps.packaging.outputs.source_product_name }}
+      desktop_url: ${{ steps.packaging.outputs.desktop_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -116,6 +122,10 @@ jobs:
         name: Validate request schema and provenance
         run: node scripts/release-request.mjs "${{ steps.select.outputs.request_path }}"
 
+      - id: packaging
+        name: Select the publisher-owned version packaging profile
+        run: node scripts/release-packaging.mjs "${{ steps.request.outputs.version }}"
+
       - name: Bind the request to the channel updater root
         env:
           RELEASE_CHANNEL: ${{ steps.request.outputs.channel }}
@@ -175,6 +185,11 @@ jobs:
     environment:
       name: ${{ needs.validate.outputs.channel == 'stable' && 'fakeidan-stable-build' || 'fakeidan-preview-build' }}
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CARGO_TERM_COLOR: always
       SOURCE_REF: ${{ needs.validate.outputs.source_ref }}
       SOURCE_REPOSITORY: ${{ needs.validate.outputs.source_repository }}
@@ -251,7 +266,7 @@ jobs:
           const config = JSON.parse(
             await readFile(process.env.TAURI_CONFIG, "utf8"),
           );
-          assert.equal(config.productName, "Fake Idan");
+          assert.equal(config.productName, process.env.PACKAGING_SOURCE_PRODUCT_NAME);
           assert.equal(config.identifier, "com.zergai.fakeidan");
           assert.equal(config.bundle.macOS.infoPlist, "Info.plist");
           NODE
@@ -364,7 +379,8 @@ jobs:
             "utf8",
           );
           assert.equal(committedKey.trim(), trustedKey.trim());
-          assert.equal(config.productName, "Fake Idan");
+          assert.equal(config.productName, process.env.PACKAGING_PRODUCT_NAME);
+          assert.equal(config.build.frontendDist, process.env.PACKAGING_DESKTOP_URL);
           assert.equal(config.identifier, "com.zergai.fakeidan");
           assert.equal(config.version, process.env.FAKEIDAN_VERSION);
           assert.deepEqual(config.plugins.updater.endpoints, [
@@ -394,7 +410,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Fake Idan.app"
+          app="src-tauri/target/aarch64-apple-darwin/release/bundle/macos/${PACKAGING_APP_BUNDLE}"
           executable="$app/Contents/MacOS/fakeidan"
           test -f "$executable" && test ! -L "$executable" && test -x "$executable"
           if find "$app" -type l -print -quit | grep -q .; then
@@ -428,7 +444,7 @@ jobs:
 
           source_stage="dist/source-stage"
           mkdir -p "$source_stage"
-          archive="$source_stage/FakeIdan_${FAKEIDAN_DESKTOP_VERSION}_aarch64.source.app.tar.gz"
+          archive="$source_stage/${PACKAGING_ASSET_PREFIX}_${FAKEIDAN_DESKTOP_VERSION}_aarch64.source.app.tar.gz"
           node "$GITHUB_WORKSPACE/release-repository/scripts/package-macos.mjs" \
             "${apps[0]}" \
             "$archive"
@@ -446,7 +462,7 @@ jobs:
 
           const metadata = {
             schema_version: 2,
-            product: "Fake Idan",
+            product: process.env.PACKAGING_PRODUCT_NAME,
             version: process.env.FAKEIDAN_DESKTOP_VERSION,
             channel: process.env.FAKEIDAN_UPDATE_CHANNEL,
             release_tag: process.env.FAKEIDAN_RELEASE_TAG,
@@ -483,6 +499,11 @@ jobs:
     environment:
       name: ${{ needs.validate.outputs.channel == 'stable' && 'fakeidan-apple-stable' || 'fakeidan-apple-preview' }}
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
       REQUEST_PATH: ${{ needs.validate.outputs.request_path }}
@@ -521,13 +542,13 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/release-request.mjs "$REQUEST_PATH"
-          source_archive="source-stage/FakeIdan_${VERSION}_aarch64.source.app.tar.gz"
+          source_archive="source-stage/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.source.app.tar.gz"
           test -f "$source_archive" && test ! -L "$source_archive"
           node scripts/extract-macos-stage.mjs \
             "$REQUEST_PATH" \
             source-stage \
             "$RUNNER_TEMP/fakeidan-apple-input"
-          app="$RUNNER_TEMP/fakeidan-apple-input/Fake Idan.app"
+          app="$RUNNER_TEMP/fakeidan-apple-input/${PACKAGING_APP_BUNDLE}"
           plist="$app/Contents/Info.plist"
           test -d "$app" && test ! -L "$app"
           test -f "$plist" && test ! -L "$plist"
@@ -560,7 +581,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/fakeidan-apple-input/Fake Idan.app"
+          app="$RUNNER_TEMP/fakeidan-apple-input/${PACKAGING_APP_BUNDLE}"
           identity="-"
           api_key_path=""
           if [[ "$CHANNEL" == "stable" ]]; then
@@ -663,11 +684,11 @@ jobs:
           output="$RUNNER_TEMP/fakeidan-apple-output"
           dmg_root="$RUNNER_TEMP/fakeidan-dmg-root"
           mkdir -p "$output" "$dmg_root"
-          ditto "$app" "$dmg_root/Fake Idan.app"
+          ditto "$app" "$dmg_root/${PACKAGING_APP_BUNDLE}"
           ln -s /Applications "$dmg_root/Applications"
-          dmg="$output/FakeIdan_${VERSION}_aarch64.dmg"
+          dmg="$output/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.dmg"
           hdiutil create \
-            -volname FakeIdan \
+            -volname "$PACKAGING_PRODUCT_NAME" \
             -srcfolder "$dmg_root" \
             -format UDZO \
             -ov "$dmg"
@@ -721,10 +742,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/fakeidan-apple-input/Fake Idan.app"
+          app="$RUNNER_TEMP/fakeidan-apple-input/${PACKAGING_APP_BUNDLE}"
           output="$RUNNER_TEMP/fakeidan-apple-output"
-          archive="$output/FakeIdan_${VERSION}_aarch64.app.tar.gz"
-          dmg="$output/FakeIdan_${VERSION}_aarch64.dmg"
+          archive="$output/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.app.tar.gz"
+          dmg="$output/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.dmg"
           test -d "$app" && test ! -L "$app"
           test -f "$dmg" && test ! -L "$dmg"
           node scripts/package-macos.mjs "$app" "$archive"
@@ -740,7 +761,7 @@ jobs:
 
           const metadata = {
             schema_version: 1,
-            product: "Fake Idan",
+            product: process.env.PACKAGING_PRODUCT_NAME,
             version: process.env.VERSION,
             channel: process.env.CHANNEL,
             release_tag: process.env.RELEASE_TAG,
@@ -781,6 +802,11 @@ jobs:
     permissions:
       contents: read
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       VERSION: ${{ needs.validate.outputs.version }}
     steps:
@@ -810,8 +836,8 @@ jobs:
         run: |
           set -euo pipefail
           payload="$RUNNER_TEMP/fakeidan-signed-payload"
-          archive="$payload/FakeIdan_${VERSION}_aarch64.app.tar.gz"
-          dmg="$payload/FakeIdan_${VERSION}_aarch64.dmg"
+          archive="$payload/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.app.tar.gz"
+          dmg="$payload/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.dmg"
           (
             cd "$payload"
             shasum -a 256 -c SHA256SUMS
@@ -824,13 +850,14 @@ jobs:
           await extractSourceApplication({
             archivePath: process.env.ARCHIVE_PATH,
             outputDirectory: process.env.EXTRACTION_PATH,
+            version: process.env.VERSION,
             maxArchiveBytes: 1_073_741_824,
             maxEntryCount: 16_384,
             maxFileBytes: 536_870_912,
             maxUncompressedBytes: 2_147_483_648,
           });
           NODE
-          app="$extraction/Fake Idan.app"
+          app="$extraction/${PACKAGING_APP_BUNDLE}"
           plist="$app/Contents/Info.plist"
           executable="$app/Contents/MacOS/fakeidan"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")" = \
@@ -902,6 +929,11 @@ jobs:
     runs-on: ubuntu-24.04
     environment: fakeidan-preview-updater
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
       REQUEST_PATH: ${{ needs.validate.outputs.request_path }}
@@ -953,7 +985,7 @@ jobs:
             echo "::error::The environment-scoped preview updater signing identity is incomplete."
             exit 1
           fi
-          archive="release-input/FakeIdan_${VERSION}_aarch64.app.tar.gz"
+          archive="release-input/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.app.tar.gz"
           test -f "$archive" && test ! -L "$archive"
           npm exec --offline -- tauri signer sign "$archive"
           unset TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD
@@ -975,6 +1007,11 @@ jobs:
     runs-on: ubuntu-24.04
     environment: fakeidan-stable-updater
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       REQUEST_PATH: ${{ needs.validate.outputs.request_path }}
       VERSION: ${{ needs.validate.outputs.version }}
@@ -1024,7 +1061,7 @@ jobs:
             echo "::error::The environment-scoped stable updater signing identity is incomplete."
             exit 1
           fi
-          archive="release-input/FakeIdan_${VERSION}_aarch64.app.tar.gz"
+          archive="release-input/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.app.tar.gz"
           test -f "$archive" && test ! -L "$archive"
           npm exec --offline -- tauri signer sign "$archive"
           unset TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD
@@ -1057,6 +1094,11 @@ jobs:
     permissions:
       contents: read
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
       REQUEST_PATH: ${{ needs.validate.outputs.request_path }}
@@ -1128,7 +1170,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive="release-input/FakeIdan_${VERSION}_aarch64.app.tar.gz"
+          archive="release-input/${PACKAGING_ASSET_PREFIX}_${VERSION}_aarch64.app.tar.gz"
           test -f "$archive" && test ! -L "$archive"
           signature="${archive}.sig"
           if [[ "$CHANNEL" == "stable" ]]; then
@@ -1207,6 +1249,12 @@ jobs:
     permissions:
       contents: write
     env:
+      PACKAGING_RELEASE_NAME: ${{ needs.validate.outputs.release_name }}
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       REQUEST_COMMIT: ${{ needs.validate.outputs.request_commit }}
       REQUEST_PATH: ${{ needs.validate.outputs.request_path }}
@@ -1362,7 +1410,7 @@ jobs:
               "$RELEASE_TAG"
               --repo "$GITHUB_REPOSITORY"
               --verify-tag
-              --title "FakeIdan $VERSION ($CHANNEL)"
+              --title "$PACKAGING_RELEASE_NAME $VERSION ($CHANNEL)"
               --notes-file "$notes_file"
               --draft
             )
@@ -1397,7 +1445,7 @@ jobs:
           const expectedPrerelease = process.env.EXPECTED_PRERELEASE === "true";
           const mismatches = [];
           if (release.tag_name !== process.env.RELEASE_TAG) mismatches.push("tag_name");
-          if (release.name !== "FakeIdan " + process.env.VERSION + " (" + process.env.CHANNEL + ")") {
+          if (release.name !== process.env.PACKAGING_RELEASE_NAME + " " + process.env.VERSION + " (" + process.env.CHANNEL + ")") {
             mismatches.push("name/channel");
           }
           if (release.prerelease !== expectedPrerelease) mismatches.push("prerelease");
@@ -1664,6 +1712,7 @@ jobs:
 
           const result = await extractSourceApplication({
             archivePath: process.env.ARCHIVE,
+            version: process.env.VERSION,
             outputDirectory: process.env.ARCHIVE_OUTPUT,
             maxArchiveBytes: 536_870_912,
             maxEntryCount: 16_384,
@@ -1700,6 +1749,11 @@ jobs:
     environment:
       name: fakeidan-feed
     env:
+      PACKAGING_PRODUCT_NAME: ${{ needs.validate.outputs.product_name }}
+      PACKAGING_APP_BUNDLE: ${{ needs.validate.outputs.app_bundle }}
+      PACKAGING_ASSET_PREFIX: ${{ needs.validate.outputs.asset_prefix }}
+      PACKAGING_SOURCE_PRODUCT_NAME: ${{ needs.validate.outputs.source_product_name }}
+      PACKAGING_DESKTOP_URL: ${{ needs.validate.outputs.desktop_url }}
       CHANNEL: ${{ needs.validate.outputs.channel }}
       REQUEST_COMMIT: ${{ needs.validate.outputs.request_commit }}
       REQUEST_PATH: ${{ needs.validate.outputs.request_path }}

@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import { releasePackaging } from "./release-packaging.mjs";
 
 import { extractSourceApplication } from "./package-macos.mjs";
 
@@ -29,7 +30,7 @@ async function assertExactRegularFiles(directory, expectedNames) {
 }
 
 function assertMetadata(metadata, request) {
-  if (metadata?.schema_version !== 2 || metadata.product !== "Fake Idan") {
+  if (metadata?.schema_version !== 2 || metadata.product !== releasePackaging(request.version).productName) {
     throw new Error("source-stage metadata schema or product is invalid");
   }
   const allowedFields = new Set([
@@ -91,7 +92,7 @@ export async function prepareSourceStage(options) {
   ));
   const request = options.request;
   const version = requireString(request?.version, "release request version is required");
-  const archiveName = `FakeIdan_${version}_aarch64.source.app.tar.gz`;
+  const archiveName = `${releasePackaging(version).assetPrefix}_${version}_aarch64.source.app.tar.gz`;
   await assertExactRegularFiles(inputDirectory, new Set([
     archiveName,
     "build-metadata.json",
@@ -110,14 +111,15 @@ export async function prepareSourceStage(options) {
 
   const extraction = await extractSourceApplication({
     archivePath: join(inputDirectory, archiveName),
+    version,
     outputDirectory,
     maxArchiveBytes: options.maxArchiveBytes,
     maxEntryCount: options.maxEntryCount,
     maxFileBytes: options.maxFileBytes,
     maxUncompressedBytes: options.maxUncompressedBytes,
   });
-  if (basename(extraction.applicationPath) !== "Fake Idan.app") {
-    throw new Error("source-stage archive did not extract one Fake Idan.app");
+  if (basename(extraction.applicationPath) !== releasePackaging(version).applicationName) {
+    throw new Error(`source-stage archive did not extract one ${releasePackaging(version).applicationName}`);
   }
   return { ...extraction, metadata };
 }

@@ -221,7 +221,7 @@ describe("FakeIdan release workflow contract", () => {
     assert.match(workflow, /find "\$bundle_root\/macos" -maxdepth 1 -type d -name '\*\.app'/);
     assert.match(workflow, /"\$\{#apps\[@\]\}" -ne 1/);
     assert.match(workflow, /hdiutil create/);
-    assert.match(workflow, /FakeIdan_\$\{VERSION\}_aarch64\.dmg/);
+    assert.match(workflow, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.dmg/);
   });
 
   it("publishes immutable assets and only channel-scoped Pages feeds", () => {
