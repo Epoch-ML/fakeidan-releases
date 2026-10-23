@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "product": "Fake Idan",
+  "version": "0.1.1",
+  "channel": "stable",
+  "platform": "darwin-aarch64",
+  "source_sha": "8ec6f7d9f334f07cd54deec78d20bd72903dc4c5",
+  "apple_notarized": true,
+  "artifacts": [
+    {
+      "name": "FakeIdan_0.1.1_aarch64.app.tar.gz",
+      "sha256": "90999dbeda953ee6a6b37afa351fb4ba986578efd2fa55b918494862db91b6d3"
+    },
+    {
+      "name": "FakeIdan_0.1.1_aarch64.app.tar.gz.sig",
+      "sha256": "f20ddfac3677b4dbcc2b8df63681d60b9112eb63d2f2e249f450132a7f6d4094"
+    },
+    {
+      "name": "FakeIdan_0.1.1_aarch64.dmg",
+      "sha256": "d29823b48a6bca2ba3b9cf7167329de48b087f9247ffcaf41acb9b23360ef27f"
+    }
+  ]
+}
