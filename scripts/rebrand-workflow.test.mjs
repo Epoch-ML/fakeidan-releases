@@ -17,3 +17,24 @@ test('renamed release notes use the new visible product while historic notes ret
   assert.match(makeReleaseNotes({ version:'0.2.0', channel:'stable', sourceSha:'a'.repeat(40) }), /^Zerg Bot 0\.2\.0/);
   assert.match(makeReleaseNotes({ version:'0.1.1', channel:'stable', sourceSha:'a'.repeat(40) }), /^FakeIdan 0\.1\.1/);
 });
+
+test('release creation and resume checks use the publisher-selected release name', () => {
+  const publish = workflow.jobs.publish;
+  assert.equal(publish.env.PACKAGING_RELEASE_NAME, '${{ needs.validate.outputs.release_name }}');
+  const run = publish.steps.map(step => step.run ?? '').join('\n');
+  assert.match(run, /--title "\$PACKAGING_RELEASE_NAME \$VERSION \(\$CHANNEL\)"/);
+  assert.match(run, /release\.name !== process\.env\.PACKAGING_RELEASE_NAME \+/);
+});
+
+test('every credentialed or canonical archive extraction binds its version-selected root', () => {
+  let calls = 0;
+  for (const job of Object.values(workflow.jobs)) {
+    for (const step of job.steps ?? []) {
+      for (const match of (step.run ?? '').matchAll(/extractSourceApplication\(\{([\s\S]*?)\}\)/g)) {
+        calls++;
+        assert.match(match[1], /version: process\.env\.VERSION/, job.name);
+      }
+    }
+  }
+  assert.equal(calls, 2);
+});
