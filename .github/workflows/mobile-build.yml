@@ -1,0 +1,157 @@
+name: Qualify Zerg Bot Mobile Builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Immutable Epoch-ML/zerg commit
+        required: true
+        type: string
+      source_ref:
+        description: Matching refs/tags/zergbot-mobile-vVERSION
+        required: true
+        type: string
+      version:
+        description: Android A and iOS simulator version
+        required: true
+        default: '0.3.0'
+        type: string
+      upgrade_version:
+        description: Android B version for same-key upgrade qualification
+        required: true
+        default: '0.3.1'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zergbot-mobile-qualification
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            runner: ubuntu-24.04
+          - platform: ios
+            runner: macos-14
+    runs-on: ${{ matrix.runner }}
+    environment: fakeidan-stable-build
+    timeout-minutes: 60
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      SOURCE_REF: ${{ inputs.source_ref }}
+      SOURCE_REPOSITORY: Epoch-ML/zerg
+      VERSION: ${{ inputs.version }}
+      UPGRADE_VERSION: ${{ inputs.upgrade_version }}
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Require the reviewed release branch
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+        run: test "$DISPATCH_REF" = refs/heads/main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: release-repository
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22.23.2'
+      - name: Validate immutable mobile request data
+        run: |
+          node --test release-repository/scripts/mobile-build-request.test.mjs
+          node release-repository/scripts/mobile-build-request.mjs
+      - name: Check out the exact SHA and matching source tag
+        env:
+          GITHUB_META_TOKEN: ${{ github.token }}
+          SOURCE_DEPLOY_KEY: ${{ secrets.ZERG_SOURCE_DEPLOY_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_DEPLOY_KEY" ]]; then
+            echo "::error::The environment-scoped ZERG_SOURCE_DEPLOY_KEY is not configured."
+            exit 1
+          fi
+          secure_dir="$RUNNER_TEMP/fakeidan-build-source-ssh"
+          install -d -m 700 "$secure_dir"
+          key_path="$secure_dir/deploy-key"
+          known_hosts="$secure_dir/known_hosts"
+          install -m 600 /dev/null "$key_path"
+          trap 'rm -f "$key_path"' EXIT
+          printf '%s\n' "$SOURCE_DEPLOY_KEY" >"$key_path"
+          curl --fail --silent --show-error --location \
+            --proto '=https' --tlsv1.2 \
+            --header "Authorization: Bearer $GITHUB_META_TOKEN" \
+            https://api.github.com/meta \
+            | jq -er '.ssh_keys | if length > 0 then .[] else error("no GitHub SSH keys") end | "github.com " + .' \
+            >"$known_hosts"
+          chmod 600 "$known_hosts"
+          ssh_command="ssh -i $key_path -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$known_hosts"
+
+          git init source
+          git -C source remote add origin "git@github.com:${SOURCE_REPOSITORY}.git"
+          GIT_SSH_COMMAND="$ssh_command" git -C source fetch --no-tags --depth=1 origin "$SOURCE_SHA"
+          GIT_SSH_COMMAND="$ssh_command" git -C source fetch --no-tags --depth=1 origin \
+            "${SOURCE_REF}:${SOURCE_REF}"
+          unset SOURCE_DEPLOY_KEY GITHUB_META_TOKEN
+          rm -f "$key_path"
+          tag_sha="$(git -C source rev-parse "${SOURCE_REF}^{commit}")"
+          if [[ "$tag_sha" != "$SOURCE_SHA" ]]; then
+            echo "::error::$SOURCE_REF resolves to $tag_sha, not requested SHA $SOURCE_SHA."
+            exit 1
+          fi
+          GIT_LFS_SKIP_SMUDGE=1 git -C source checkout --detach "$SOURCE_SHA"
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
+          test -f source/zapps/fakeidan/package-lock.json
+
+      - name: Delete ephemeral source deploy key
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/fakeidan-build-source-ssh/deploy-key"
+
+      - name: Set up the tested Rust toolchain
+        run: |
+          rustup toolchain install 1.94.1 --profile minimal
+          rustup default 1.94.1
+      - name: Install the isolated locked mobile CLI
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix source/zapps/fakeidan/scripts/mobile-tools
+      - name: Check mobile release contracts
+        working-directory: source/zapps/fakeidan
+        run: node --test tests/release/mobile_*.test.mjs
+      - name: Build unsigned Android A and B
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          export NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+          export ZERGBOT_ANDROID_CERT_SHA256="$(tr -d '\r\n' <release-repository/keys/zergbot-android-signing.sha256)"
+          test -d "$NDK_HOME" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;27.2.12479018'
+          rustup target add aarch64-linux-android x86_64-linux-android
+          for version in "$VERSION" "$UPGRADE_VERSION"; do
+            node source/zapps/fakeidan/scripts/build-mobile-native.mjs --platform android --version "$version" --source-sha "$SOURCE_SHA" --out "$GITHUB_WORKSPACE/out/android/$version" --unsigned --targets aarch64,x86_64
+          done
+      - name: Build iOS simulator without distribution credentials
+        if: matrix.platform == 'ios'
+        shell: bash
+        env:
+          APPLE_DEVELOPMENT_TEAM: JLNC3N65LF
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          rustup target add aarch64-apple-ios-sim
+          node source/zapps/fakeidan/scripts/build-mobile-native.mjs --platform ios --version "$VERSION" --source-sha "$SOURCE_SHA" --out "$GITHUB_WORKSPACE/out/ios" --simulator
+      - name: Upload only unsigned public binaries and bounded build metadata
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: zergbot-mobile-${{ matrix.platform }}-${{ inputs.version }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
