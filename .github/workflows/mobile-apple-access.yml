@@ -1,0 +1,41 @@
+name: Inspect Zerg Bot iOS Distribution Access
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    environment: fakeidan-apple-stable
+    timeout-minutes: 5
+    steps:
+      - name: Require the reviewed release branch
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+        run: test "$DISPATCH_REF" = refs/heads/main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22.23.2'
+      - name: Test bounded read-only distribution discovery
+        run: node --test scripts/mobile-apple-access.test.mjs
+      - name: Check only the Zerg Bot app and bundle registrations
+        env:
+          APPLE_API_ISSUER: ${{ secrets.FAKEIDAN_APPLE_API_ISSUER }}
+          APPLE_API_KEY_ID: ${{ secrets.FAKEIDAN_APPLE_API_KEY_ID }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.FAKEIDAN_APPLE_API_PRIVATE_KEY }}
+        run: node scripts/mobile-apple-access.mjs "$RUNNER_TEMP/apple-access.json"
+      - name: Retain bounded credential-free result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: zergbot-apple-distribution-access
+          path: ${{ runner.temp }}/apple-access.json
+          if-no-files-found: warn
+          retention-days: 7
