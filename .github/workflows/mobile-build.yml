@@ -131,9 +131,9 @@ jobs:
           set -euo pipefail
           export JAVA_HOME="$JAVA_HOME_17_X64"
           export ANDROID_HOME="$ANDROID_SDK_ROOT"
-          export NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+          export NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
           export ZERGBOT_ANDROID_CERT_SHA256="$(tr -d '\r\n' <release-repository/keys/zergbot-android-signing.sha256)"
-          test -d "$NDK_HOME" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;27.2.12479018'
+          test -d "$NDK_HOME" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;28.2.13676358'
           rustup target add aarch64-linux-android x86_64-linux-android
           for version in "$VERSION" "$UPGRADE_VERSION"; do
             node source/zapps/fakeidan/scripts/build-mobile-native.mjs --platform android --version "$version" --source-sha "$SOURCE_SHA" --out "$GITHUB_WORKSPACE/out/android/$version" --unsigned --targets aarch64,x86_64
@@ -146,7 +146,7 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild -version
-          rustup target add aarch64-apple-ios-sim
+          if [[ "$(uname -m)" == arm64 ]]; then rustup target add aarch64-apple-ios-sim; else rustup target add x86_64-apple-ios; fi
           node source/zapps/fakeidan/scripts/build-mobile-native.mjs --platform ios --version "$VERSION" --source-sha "$SOURCE_SHA" --out "$GITHUB_WORKSPACE/out/ios" --simulator
       - name: Upload only unsigned public binaries and bounded build metadata
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
