@@ -132,7 +132,8 @@ jobs:
           export JAVA_HOME="$JAVA_HOME_17_X64"
           export ANDROID_HOME="$ANDROID_SDK_ROOT"
           export NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
-          export ZERGBOT_ANDROID_CERT_SHA256="$(tr -d '\r\n' <release-repository/keys/zergbot-android-signing.sha256)"
+          ZERGBOT_ANDROID_CERT_SHA256="$(tr -d '\r\n' <release-repository/keys/zergbot-android-signing.sha256)"
+          export ZERGBOT_ANDROID_CERT_SHA256
           test -d "$NDK_HOME" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;28.2.13676358'
           rustup target add aarch64-linux-android x86_64-linux-android
           for version in "$VERSION" "$UPGRADE_VERSION"; do
