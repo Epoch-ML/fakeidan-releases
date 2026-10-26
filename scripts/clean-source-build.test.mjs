@@ -19,7 +19,7 @@ async function runDependencyStep({ failClientBuild = false } = {}) {
     await mkdir(join(directory, "bin"));
     await mkdir(join(directory, "release-repository"));
     await mkdir(join(directory, "source/zapps/zergbox/client"), { recursive: true });
-    await mkdir(join(directory, "source/zapps/fakeidan"), { recursive: true });
+    await mkdir(join(directory, "source/zapps/fakeidan/scripts/mobile-tools"), { recursive: true });
     // npm is the process boundary: model its file-dependency link and sibling build output.
     const npm = join(directory, "bin/npm");
     await writeFile(npm, `#!${process.execPath}
@@ -41,7 +41,14 @@ if (prefix.endsWith("/source/zapps/zergbox") && args.includes("client:build")) {
   await writeFile(resolve(prefix, "client/package.json"), JSON.stringify({ type: "module", exports: "./dist/index.js" }));
   await writeFile(resolve(prefix, "client/dist/index.js"), 'export const projectionName = name => "projection:" + name;');
 }
+if (prefix.endsWith("/source/zapps/fakeidan/scripts/mobile-tools") && args.includes("ci")) {
+  await writeFile(resolve(prefix, "runtime-closure.json"), JSON.stringify({ yaml: "2.9.1", pngjs: "7.0.0" }));
+}
 if (prefix.endsWith("/source/zapps/fakeidan") && args.includes("ci")) {
+  let closure = {};
+  try { closure = JSON.parse(await readFile(resolve(prefix, "scripts/mobile-tools/runtime-closure.json"), "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  console.log("mobile-tools:" + JSON.stringify(closure));
   await mkdir(resolve(prefix, "node_modules/@zergai"), { recursive: true });
   await symlink(resolve(prefix, "../zergbox/client"), resolve(prefix, "node_modules/@zergai/zergbox-client"));
   await writeFile(resolve(prefix, "verify.mjs"), 'import { projectionName } from "@zergai/zergbox-client"; console.log(projectionName("qualified-source"));');
@@ -90,4 +97,12 @@ test("the pinned release Rust compiler supports the locked macOS notification de
   // notify-rust 4.18.0 is in the locked Darwin graph and declares Rust 1.89.0.
   assert.ok(major > 1 || (major === 1 && minor >= 89), `locked macOS notification dependency requires Rust >=1.89.0; release pins ${installed[0]}`);
   assert.match(step.run, new RegExp(`rustup default ${installed[1]}\\.${installed[2]}\\.${installed[3]}(?:\\s|$)`));
+});
+
+
+test("source app preparation installs the locked mobile fixture runtime before release tests", async () => {
+  const result = await runDependencyStep();
+  assert.equal(result.status, 0, result.stderr);
+  const line = result.stdout.split("\n").find(value => value.startsWith("mobile-tools:"));
+  assert.deepEqual(JSON.parse(line.slice("mobile-tools:".length)), { yaml: "2.9.1", pngjs: "7.0.0" });
 });
