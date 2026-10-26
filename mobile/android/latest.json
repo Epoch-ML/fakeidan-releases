@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "product": "Zerg Bot",
+  "platform": "android",
+  "packageName": "com.zergai.fakeidan",
+  "channel": "stable",
+  "version": "0.5.0",
+  "versionCode": 5000,
+  "publishedAt": "2026-10-26T21:56:30.930Z",
+  "sourceSha": "793c3935379bdd45199d5a545fb78140cbc1c05e",
+  "apk": {
+    "name": "ZergBot_0.5.0_android.apk",
+    "sha256": "74df6068166463c8de8cd75114c64ce56a87f1e2862e232b3db76e9447e69fc6",
+    "bytes": 27768591,
+    "certificateSha256": "45e32fee60ccc797dd151ab8b3a9440ef7a1fa521a8778dd396236e0f124c5ee",
+    "minSdk": 24,
+    "debuggable": false
+  }
+}
