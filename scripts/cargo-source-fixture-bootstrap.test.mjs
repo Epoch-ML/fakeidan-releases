@@ -32,9 +32,9 @@ if(process.argv.includes('test:release'))console.log('offline cross-platform sou
   // replace its implementation or assert calls inside it.
   await writeFile(join(bin,'node'),'#!/bin/sh\nexit 0\n');
   for(const name of['cargo','npm','node'])await chmod(join(bin,name),0o755);
-  const steps=workflow.jobs['build-macos'].steps,first=steps.findIndex(s=>s.name==='Test and audit the exact source');
-  const bootstrap=steps.filter(s=>s.name==='Fetch locked native dependency closure for offline source tests').map(s=>s.run).join('\n');
-  const result=spawnSync('bash',['-c',bootstrap+'\n'+steps[first].run],{cwd:root,encoding:'utf8',timeout:10000,env:{...process.env,PATH:bin+':'+process.env.PATH,COLD_REGISTRY:registry,FAIL_FETCH:String(failFetch)}});
+  const steps=workflow.jobs['build-macos'].steps;
+  const program=steps.filter(s=>['Fetch locked native dependency closure for offline source tests','Test and audit the exact source'].includes(s.name)).map(s=>s.run).join('\n');
+  const result=spawnSync('bash',['-c',program],{cwd:root,encoding:'utf8',timeout:10000,env:{...process.env,PATH:bin+':'+process.env.PATH,COLD_REGISTRY:registry,FAIL_FETCH:String(failFetch)}});
   return result;
  }finally{await rm(root,{recursive:true,force:true});}
 }

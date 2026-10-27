@@ -357,6 +357,12 @@ jobs:
           printf '%s\n' "$tool_directory/xcodegen/bin" >> "$GITHUB_PATH"
           printf 'ZERGBOT_XCODEGEN=%s\n' "$xcodegen_binary" >> "$GITHUB_ENV"
 
+      - name: Fetch locked native dependency closure for offline source tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fetch --locked --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml
+
       - name: Test and audit the exact source
         run: |
           set -euo pipefail
