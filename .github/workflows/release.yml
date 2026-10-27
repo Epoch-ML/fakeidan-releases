@@ -327,6 +327,7 @@ jobs:
           set -euo pipefail
           npm ci --ignore-scripts --no-audit --no-fund --prefix source/zapps/zergbox
           npm run client:build --prefix source/zapps/zergbox
+          npm ci --ignore-scripts --no-audit --no-fund --prefix source/zapps/fakeidan/scripts/mobile-tools
           npm ci --prefix source/zapps/fakeidan
           npm ci --ignore-scripts --prefix release-repository
           (
@@ -335,6 +336,26 @@ jobs:
             npm test
           )
           cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Install pinned XcodeGen for source release tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_archive="$RUNNER_TEMP/xcodegen-2.46.0.zip"
+          tool_directory="$RUNNER_TEMP/xcodegen-2.46.0"
+          mkdir "$tool_directory"
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip \
+            --output "$tool_archive"
+          printf '%s  %s\n' \
+            4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806 \
+            "$tool_archive" | shasum -a 256 -c -
+          unzip -q "$tool_archive" -d "$tool_directory"
+          xcodegen_binary="$tool_directory/xcodegen/bin/xcodegen"
+          test "$("$xcodegen_binary" --version)" = 'Version: 2.46.0'
+          printf '%s\n' "$tool_directory/xcodegen/bin" >> "$GITHUB_PATH"
+          printf 'ZERGBOT_XCODEGEN=%s\n' "$xcodegen_binary" >> "$GITHUB_ENV"
 
       - name: Test and audit the exact source
         run: |
