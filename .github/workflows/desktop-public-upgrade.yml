@@ -1,0 +1,40 @@
+name: Qualify the public Zerg Bot Mac upgrade
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-native-upgrade:
+    name: Unmodified public 0.2.2 to 0.3.2 on a fresh Mac
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22.23.2'
+      - name: Test the bounded qualification before launching public apps
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm audit --audit-level=moderate
+          npm test
+      - name: Observe the real signed native automatic HTTPS update
+        run: node scripts/desktop-upgrade.mjs "$RUNNER_TEMP/zergbot-public-upgrade.json"
+      - name: Retain the credential-free result and bounded native logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: zergbot-public-mac-upgrade-022-to-032
+          path: |
+            ${{ runner.temp }}/zergbot-public-upgrade.json
+            ${{ runner.temp }}/zergbot-public-upgrade-*/public-native-process.log
+            ${{ runner.temp }}/zergbot-public-upgrade-*/signature-*.log
+          if-no-files-found: warn
+          retention-days: 14
