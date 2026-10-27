@@ -155,6 +155,27 @@ test('an HTTPS redirect can succeed without weakening the pinned digest', async 
   assert.deepEqual(await readFile(join(root, 'artifact')), bytes);
 });
 
+test('HTTP300 follows its explicit HTTPS location instead of silently failing the public handoff', async t => {
+  const root = await directory(t);
+  const response = async url => url.endsWith('/public') ? new Response(null, { status: 300, headers: { location: 'https://cdn.example.test/pinned' } }) : new Response(bytes);
+  await downloadPinned('https://example.test/public', join(root, 'artifact'), expected, response);
+  assert.deepEqual(await readFile(join(root, 'artifact')), bytes);
+});
+
+test('HTTP400 remains an HTTP error rather than being treated as a redirect', async t => {
+  const root = await directory(t);
+  await assert.rejects(downloadPinned('https://example.test/public', join(root, 'artifact'), expected, async () => new Response(null, { status: 400 })), /HTTP400/);
+  assert.deepEqual(await readdir(root), []);
+});
+
+test('the HTTP transport must retain manual redirects and a live timeout signal', async t => {
+  const root = await directory(t);
+  // Model a transport that refuses requests outside its required HTTPS/timeout contract.
+  const transport = async (_url, options) => options.redirect === 'manual' && options.signal instanceof AbortSignal && !options.signal.aborted ? new Response(bytes) : new Response(null, { status: 500 });
+  await downloadPinned('https://example.test/public', join(root, 'artifact'), expected, transport);
+  assert.deepEqual(await readFile(join(root, 'artifact')), bytes);
+});
+
 test('six redirect responses exhaust the download budget even if a seventh would succeed', async t => {
   const root = await directory(t);
   let requests = 0;
