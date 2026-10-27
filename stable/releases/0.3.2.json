@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "product": "Zerg Bot",
+  "version": "0.3.2",
+  "channel": "stable",
+  "platform": "darwin-aarch64",
+  "source_sha": "ea4238224556682c1649c5f8ed2ef1917d582696",
+  "apple_notarized": true,
+  "artifacts": [
+    {
+      "name": "ZergBot_0.3.2_aarch64.app.tar.gz",
+      "sha256": "6bb3b139c9467d1cc5d9bdfbcf78ee4857a39e742fe67fdbd9c8be96e23915df"
+    },
+    {
+      "name": "ZergBot_0.3.2_aarch64.app.tar.gz.sig",
+      "sha256": "593f59cf56f308827b785cc0504bb8958c7ef051f2db16b46077e1d93969634c"
+    },
+    {
+      "name": "ZergBot_0.3.2_aarch64.dmg",
+      "sha256": "f47499e52df9d1efea8b1e7d0a11d7b9316440540bd0fdcecd23ba280539a491"
+    }
+  ]
+}

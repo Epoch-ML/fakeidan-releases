@@ -1,11 +1,11 @@
 {
-  "version": "0.2.2",
+  "version": "0.3.2",
   "notes": "",
-  "pub_date": "2026-10-24T20:10:05.000Z",
+  "pub_date": "2026-10-27T01:31:28.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSVElISHp1TmpucmYvdWgySzV3RkpzTGo4V2s3YmJncVlqMUdMSm1KKzE3UWFVcTg2clhWNWc4TDZMZ28vUnh2Vjd1L2twMy95NXM4b3plRUdLTkYyYVB2VlBsQkJqNkFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODc0MjgyCWZpbGU6WmVyZ0JvdF8wLjIuMl9hYXJjaDY0LmFwcC50YXIuZ3oKRG9ycFp3NXFxWXY0WlNPNXVZYVdPN2MxcU1DU1lDY1l4cHB3YlRyUDQ4VTBkcjEreWpyZzdneitFZXo1NkdvM3Z2Q041SjhEa0o4UFpPNmhpNzFOQUE9PQo=",
-      "url": "https://github.com/Epoch-ML/fakeidan-releases/releases/download/fakeidan-v0.2.2/ZergBot_0.2.2_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSVElISHp1TmpuclRFZ0NPaCtlV2hWQ05ad3E1RG90M1JpM0MzS1hhTG9Dd3R2ZVZibmVBaHVCaFVWRnFmbVU1UDRUWDlubUY5VlhEWWJRV2QxZjZWQlRSc1dETnloK0FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDY3MDc3CWZpbGU6WmVyZ0JvdF8wLjMuMl9hYXJjaDY0LmFwcC50YXIuZ3oKcUgzbE1Kd0VkSVd2RmpZd2dBcWNiWGRlMVlSR3pPK20vdDR2NWRsa2VNQmkyNlVtd2ZvRFc5YnhMZzFRREFQU0VNOWZ5MUhKZmNPNjN2dDV6bXlqQnc9PQo=",
+      "url": "https://github.com/Epoch-ML/fakeidan-releases/releases/download/fakeidan-v0.3.2/ZergBot_0.3.2_aarch64.app.tar.gz"
     }
   }
 }
