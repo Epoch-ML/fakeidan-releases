@@ -24,7 +24,7 @@ jobs:
           set -euo pipefail
           npm ci --ignore-scripts
           npm audit --audit-level=moderate
-          npm test
+          node --test --test-concurrency=1 scripts/*.test.mjs
       - name: Observe the real signed native automatic HTTPS update
         run: node scripts/desktop-upgrade.mjs "$RUNNER_TEMP/zergbot-public-upgrade.json"
       - name: Retain the credential-free result and bounded native logs

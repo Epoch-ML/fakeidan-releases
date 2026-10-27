@@ -129,6 +129,15 @@ async function assertAbsent(path) {
   throw new UpgradeQualificationError(`The fresh runner already has application state at ${path}.`);
 }
 
+// Locked tauri-plugin-single-instance2.4.3 with deep-link (without semver) uses
+// this underscore-normalized identifier; it has no UID suffix. Verified against
+// the pinned plugin source and the installed0.2.2 process's read-only lsof output.
+export const MAC_SINGLETON_SOCKET = '/tmp/com_zergai_fakeidan_si.sock';
+
+export async function assertFreshApplicationState(paths) {
+  for (const path of paths) await assertAbsent(path);
+}
+
 async function verifyCodeSignature(app, output) {
   const signature = await execute('/usr/bin/codesign', ['-dvvv', app], { encoding: 'utf8' });
   requireProof(signature.stderr.includes('Authority=Developer ID Application:') && signature.stderr.includes('flags=0x10000(runtime)'), 'Expected the original hardened Developer ID signature.');
@@ -153,7 +162,7 @@ export async function runPublicUpgrade(reportPath) {
   requireProof(isAbsolute(reportPath) && resolve(reportPath).startsWith(`${temporaryRoot}${sep}`), 'The report must remain inside RUNNER_TEMP.');
   const home = process.env.HOME;
   requireProof(typeof home === 'string' && isAbsolute(home), 'The runner home must be explicit.');
-  for (const path of [join(home, 'Library/WebKit', bundleId), join(home, 'Library/Application Support', bundleId), '/tmp/com_zergai_fakeidan_si.sock']) await assertAbsent(path);
+  await assertFreshApplicationState([join(home, 'Library/WebKit', bundleId), join(home, 'Library/Application Support', bundleId), MAC_SINGLETON_SOCKET]);
   const directory = await mkdtemp(join(temporaryRoot, 'zergbot-public-upgrade-'));
   const report = { schemaVersion: 1, qualified: false, startedAt: new Date().toISOString(), directory, platform: process.platform, architecture: process.arch, publicFromVersion: sourceVersion, publicToVersion: targetVersion, progress: [] };
   let source, target;

@@ -4,12 +4,13 @@ import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createConnection, createServer } from 'node:net';
 import test from 'node:test';
 import { promisify } from 'node:util';
 import fc from 'fast-check';
 import { parse } from 'yaml';
 
-import { UpgradeQualificationError, downloadPinned, verifyUpgradeEvidence } from './desktop-upgrade.mjs';
+import { MAC_SINGLETON_SOCKET, UpgradeQualificationError, assertFreshApplicationState, downloadPinned, verifyUpgradeEvidence } from './desktop-upgrade.mjs';
 
 function evidence() {
   const entries = {
@@ -106,6 +107,13 @@ test('absent evidence fails with the specific source-version qualification error
   for (const value of [undefined, null, {}, { before: {} }]) assert.throws(() => verifyUpgradeEvidence(value), error => error instanceof UpgradeQualificationError && error.message.includes('source version'));
 });
 
+test('missing proof sections fail with a qualification error rather than a successful or unreadable result', () => {
+  for (const section of ['expected', 'staged', 'restarted', 'termination', 'delivery', 'independence']) {
+    const input = evidence(); delete input[section];
+    assert.throws(() => verifyUpgradeEvidence(input), error => error instanceof UpgradeQualificationError && error.message.length > 0);
+  }
+});
+
 const bytes = Buffer.from('public signed fixture');
 const expected = { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
 
@@ -145,6 +153,12 @@ for (const [name, response, message] of [
 test('a network timeout propagates and leaves no artifact', async t => {
   const root = await directory(t);
   await assert.rejects(downloadPinned('https://example.test/public', join(root, 'artifact'), expected, async () => { throw new DOMException('network timeout', 'TimeoutError'); }), { name: 'TimeoutError', message: 'network timeout' });
+  assert.deepEqual(await readdir(root), []);
+});
+
+test('HTTP200 without a body is a typed transport failure and leaves no artifact', async t => {
+  const root = await directory(t);
+  await assert.rejects(downloadPinned('https://example.test/public', join(root, 'artifact'), expected, async () => new Response(null)), error => error instanceof UpgradeQualificationError && error.message.includes('HTTP200'));
   assert.deepEqual(await readdir(root), []);
 });
 
@@ -211,6 +225,30 @@ test('the executable refuses a user workstation before making any app or profile
   assert.deepEqual(await readdir(root), []);
 });
 
+test('the locked plugin singleton path has no UID suffix and an existing socket remains usable', async t => {
+  assert.equal(MAC_SINGLETON_SOCKET, '/tmp/com_zergai_fakeidan_si.sock');
+  const root = await mkdtemp('/tmp/zbu-');
+  const socketPath = join(root, 'com_zergai_fakeidan_si.sock');
+  const server = createServer(socket => socket.end('original socket preserved'));
+  await new Promise((resolveListen, rejectListen) => { server.once('error', rejectListen); server.listen(socketPath, resolveListen); });
+  t.after(async () => { await new Promise(resolveClose => server.close(resolveClose)); await rm(root, { recursive: true, force: true }); });
+  await assert.rejects(assertFreshApplicationState([socketPath]), error => error instanceof UpgradeQualificationError && error.message.includes(socketPath));
+  const message = await new Promise((resolveMessage, rejectMessage) => {
+    const socket = createConnection(socketPath);
+    let content = '';
+    socket.on('data', chunk => { content += chunk.toString(); });
+    socket.once('end', () => resolveMessage(content));
+    socket.once('error', rejectMessage);
+  });
+  assert.equal(message, 'original socket preserved');
+});
+
+test('admitting an empty application-state path does not create a profile or socket', async t => {
+  const root = await directory(t);
+  await assertFreshApplicationState([join(root, 'profile'), join(root, 'singleton.sock')]);
+  assert.deepEqual(await readdir(root), []);
+});
+
 test('the isolated workflow admits no secret or signing environment and only pinned actions', async () => {
   const text = await readFile(new URL('../.github/workflows/desktop-public-upgrade.yml', import.meta.url), 'utf8');
   const workflow = parse(text);
@@ -224,5 +262,6 @@ test('the isolated workflow admits no secret or signing environment and only pin
   assert.equal(job.steps.some(step => step.run === 'node scripts/desktop-upgrade.mjs "$RUNNER_TEMP/zergbot-public-upgrade.json"'), true);
   assert.equal(text.includes('secrets.'), false);
   assert.equal(text.includes('signing_private'), false);
+  assert.equal(job.steps.some(step => step.run?.includes('node --test --test-concurrency=1 scripts/*.test.mjs')), true);
   for (const step of job.steps.filter(step => step.uses)) assert.match(step.uses, /@[a-f0-9]{40}$/);
 });
