@@ -59,6 +59,7 @@ async function withBuildFixture(channel, callback, { wrongSourceKey = false } = 
       ...process.env,
       PATH: `${join(directory, "bin")}:${process.env.PATH}`,
       GITHUB_WORKSPACE: directory,
+      SOURCE_APP_DIR: "source/zapps/fakeidan",
       PACKAGING_PRODUCT_NAME: "Fake Idan",
       PACKAGING_APP_BUNDLE: "Fake Idan.app",
       PACKAGING_ASSET_PREFIX: "FakeIdan",

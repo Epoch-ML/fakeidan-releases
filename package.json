@@ -14,7 +14,8 @@
     "test:mutation:payload": "stryker run stryker.payload.config.mjs",
     "test:mutation:policy": "stryker run stryker.policy.config.mjs",
     "test:mutation:request": "stryker run stryker.request.config.mjs",
-    "test:mutation:signing": "stryker run stryker.signing.config.mjs"
+    "test:mutation:signing": "stryker run stryker.signing.config.mjs",
+    "test:mutation:source-app-path": "stryker run stryker.source-app-path.config.mjs"
   },
   "dependencies": {
     "@tauri-apps/cli": "2.11.4",

@@ -76,14 +76,14 @@ test("audits the exact locked source package without an auxiliary runtime", () =
   const install = step("build-macos", "Install locked dependencies and security tooling");
   assert.match(
     install.run,
-    /npm ci --prefix source\/zapps\/fakeidan/,
+    /npm ci --prefix "\$SOURCE_APP_DIR"/,
   );
   const gate = step("build-macos", "Test and audit the exact source");
   assert.match(
     gate.run,
-    /npm --prefix source\/zapps\/fakeidan audit --omit=dev --audit-level=moderate/,
+    /npm --prefix "\$SOURCE_APP_DIR" audit --omit=dev --audit-level=moderate/,
   );
-  assert.match(gate.run, /npm run test:release --prefix source\/zapps\/fakeidan/);
+  assert.match(gate.run, /npm run test:release --prefix "\$SOURCE_APP_DIR"/);
   assert.doesNotMatch(gate.run, /source\/ztc|meeting-runtime/);
 });
 

@@ -25,7 +25,7 @@ describe("Fake Idan public release boundary", () => {
     const workflow = await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
     assert.match(workflow, /Publish Zerg Bot Desktop Release/);
     assert.match(workflow, /Epoch-ML\/fakeidan-releases/);
-    assert.match(workflow, /source\/zapps\/fakeidan\/src-tauri\/tauri\.conf\.json/);
+    assert.match(workflow, /\$\{SOURCE_APP_DIR\}\/src-tauri\/tauri\.conf\.json/);
     assert.match(workflow, /com\.zergai\.fakeidan/);
     assert.match(workflow, /requests\/fakeidan-\(preview-\)\?v/);
     assert.match(workflow, /darwin-aarch64/);

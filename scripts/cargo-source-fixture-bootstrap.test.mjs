@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import test from 'node:test';
 import {parse} from 'yaml';
 const workflow=parse(await readFile(new URL('../.github/workflows/release.yml',import.meta.url),'utf8'));
-async function exercise(failFetch=false){
+async function exercise(failFetch=false,sourceName="fakeidan"){
  const root=await mkdtemp(join(tmpdir(),'bot-cold-native-fixtures-'));
  try{
   const bin=join(root,'bin'),registry=join(root,'locked-registry-closure');await mkdir(bin);
@@ -16,7 +16,7 @@ async function exercise(failFetch=false){
 import{writeFileSync}from'node:fs';
 const a=process.argv.slice(2);
 if(a[0]==='fetch'){
- if(!a.includes('--locked')||a[a.indexOf('--manifest-path')+1]!=='source/zapps/fakeidan/src-tauri/Cargo.toml')process.exit(33);
+ if(!a.includes('--locked')||a[a.indexOf('--manifest-path')+1]!=='source/zapps/${sourceName}/src-tauri/Cargo.toml')process.exit(33);
  if(process.env.FAIL_FETCH==='true'){console.error('locked registry dependency unavailable');process.exit(42);}
  writeFileSync(process.env.COLD_REGISTRY,'complete');
 }
@@ -34,7 +34,7 @@ if(process.argv.includes('test:release'))console.log('offline cross-platform sou
   for(const name of['cargo','npm','node'])await chmod(join(bin,name),0o755);
   const steps=workflow.jobs['build-macos'].steps;
   const program=steps.filter(s=>['Fetch locked native dependency closure for offline source tests','Test and audit the exact source'].includes(s.name)).map(s=>s.run).join('\n');
-  const result=spawnSync('bash',['-c',program],{cwd:root,encoding:'utf8',timeout:10000,env:{...process.env,PATH:bin+':'+process.env.PATH,COLD_REGISTRY:registry,FAIL_FETCH:String(failFetch)}});
+  const result=spawnSync('bash',['-c',program],{cwd:root,encoding:'utf8',timeout:10000,env:{...process.env,PATH:bin+':'+process.env.PATH,COLD_REGISTRY:registry,FAIL_FETCH:String(failFetch),SOURCE_APP_DIR:`source/zapps/${sourceName}`}});
   return result;
  }finally{await rm(root,{recursive:true,force:true});}
 }
@@ -44,3 +44,5 @@ test('a cold runner fetches the complete locked registry before offline cross-pl
 test('a failed locked native fetch fails the release before source tests can claim success',async()=>{
  const r=await exercise(true);assert.equal(r.status,42,r.stderr);assert.match(r.stderr,/locked registry dependency unavailable/);assert.doesNotMatch(r.stdout,/offline cross-platform source contract passed/);
 });
+
+test('a renamed source checkout fetches its own locked manifest before source tests',async()=>{const r=await exercise(false,'zergbot');assert.equal(r.status,0,r.stderr);assert.match(r.stdout,/offline cross-platform source contract passed/);});
