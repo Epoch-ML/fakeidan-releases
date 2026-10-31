@@ -29,6 +29,9 @@
     "yaml": "2.9.0"
   },
   "overrides": {
-    "qs": "6.16.1"
+    "qs": "6.16.1",
+    "@stryker-mutator/core": {
+      "minimatch": "11.0.1"
+    }
   }
 }
