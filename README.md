@@ -8,8 +8,9 @@ Fake Idan packaging; 0.2.0 and later use Zerg Bot packaging. Existing bundle IDs
 executable names, updater keys, repository and feed endpoints remain unchanged.
 Legacy https://fakeidan.com/desktop remains directly served for old native clients.
 Private source remains in **Epoch-ML/zerg** under
-`zapps/fakeidan`; this repository holds reviewed release requests, public
-artifacts, independent channel updater public keys, and GitHub Pages feeds.
+`zapps/zergbot`; historical immutable tags may still use `zapps/fakeidan`.
+This repository holds reviewed release requests, public artifacts, independent
+channel updater public keys, and GitHub Pages feeds.
 
 The desktop microphone entitlement is limited to recording voice messages the user chooses to
 send. macOS asks for permission when recording starts; the application declares that purpose in
@@ -127,6 +128,12 @@ Required controls:
 
 Apple Developer ID and notarization credentials come from the owning team.
 Never commit, print, or transfer private keys through artifacts.
+
+### Source directory compatibility
+
+The credential-free macOS and mobile builders resolve the app directory from the exact immutable source checkout using this repository's `scripts/source-app-path.mjs`. Exactly one real `zapps/zergbot` or historical `zapps/fakeidan` directory must exist, with real package manifests and a lockfile. Missing, ambiguous or symlinked roots fail before any source code runs. The resolver emits a fixed `SOURCE_APP_DIR`; build gates, dependency caches and source-stage collection use that same directory.
+
+This source-tree rename preserves the existing bundle identifier, updater roots, signing environments, release repository, protected tag grammars and historical release support. It does not rotate a signing identity or change an installed app's update channel.
 
 ### Native dependency audit scope
 

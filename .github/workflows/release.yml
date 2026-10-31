@@ -241,7 +241,6 @@ jobs:
           fi
           GIT_LFS_SKIP_SMUDGE=1 git -C source checkout --detach "$SOURCE_SHA"
           test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
-          test -f source/zapps/fakeidan/package-lock.json
 
       - name: Delete ephemeral source deploy key
         if: always()
@@ -249,13 +248,19 @@ jobs:
         run: |
           rm -f "$RUNNER_TEMP/fakeidan-build-source-ssh/deploy-key"
 
+      - name: Resolve the immutable source app directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          node release-repository/scripts/source-app-path.mjs >> "$GITHUB_ENV"
+
       - name: Bind source desktop identity to the public entitlement contract
         shell: bash
         run: |
           set -euo pipefail
           public_entitlements="release-repository/macos/FakeIdan.entitlements.plist"
-          source_entitlements="source/zapps/fakeidan/src-tauri/Entitlements.plist"
-          source_config="source/zapps/fakeidan/src-tauri/tauri.conf.json"
+          source_entitlements="${SOURCE_APP_DIR}/src-tauri/Entitlements.plist"
+          source_config="${SOURCE_APP_DIR}/src-tauri/tauri.conf.json"
           test -f "$public_entitlements" && test ! -L "$public_entitlements"
           test -f "$source_entitlements" && test ! -L "$source_entitlements"
           test -f "$source_config" && test ! -L "$source_config"
@@ -280,8 +285,8 @@ jobs:
           import { readFile } from "node:fs/promises";
 
           const roots = [
-            ["preview", "release-repository/keys/fakeidan-preview-updater.pubkey", "source/zapps/fakeidan/src-tauri/updater.preview.pubkey"],
-            ["stable", "release-repository/keys/fakeidan-stable-updater.pubkey", "source/zapps/fakeidan/src-tauri/updater.stable.pubkey"],
+            ["preview", "release-repository/keys/fakeidan-preview-updater.pubkey", `${process.env.SOURCE_APP_DIR}/src-tauri/updater.preview.pubkey`],
+            ["stable", "release-repository/keys/fakeidan-stable-updater.pubkey", `${process.env.SOURCE_APP_DIR}/src-tauri/updater.stable.pubkey`],
           ];
           for (const [channel, trustedPath, sourcePath] of roots) {
             const trusted = (await readFile(trustedPath, "utf8")).trim();
@@ -296,7 +301,7 @@ jobs:
         with:
           node-version: "22.23.2"
           cache: npm
-          cache-dependency-path: source/zapps/fakeidan/package-lock.json
+          cache-dependency-path: ${{ env.SOURCE_APP_DIR }}/package-lock.json
 
       - name: Verify the deterministic source commit timestamp
         env:
@@ -327,8 +332,8 @@ jobs:
           set -euo pipefail
           npm ci --ignore-scripts --no-audit --no-fund --prefix source/zapps/zergbox
           npm run client:build --prefix source/zapps/zergbox
-          npm ci --ignore-scripts --no-audit --no-fund --prefix source/zapps/fakeidan/scripts/mobile-tools
-          npm ci --prefix source/zapps/fakeidan
+          npm ci --ignore-scripts --no-audit --no-fund --prefix "$SOURCE_APP_DIR/scripts/mobile-tools"
+          npm ci --prefix "$SOURCE_APP_DIR"
           npm ci --ignore-scripts --prefix release-repository
           (
             cd release-repository
@@ -361,25 +366,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo fetch --locked --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml
+          cargo fetch --locked --manifest-path "$SOURCE_APP_DIR/src-tauri/Cargo.toml"
 
       - name: Test and audit the exact source
         run: |
           set -euo pipefail
-          npm --prefix source/zapps/fakeidan audit --omit=dev --audit-level=moderate
-          node release-repository/scripts/audit-macos-cargo.mjs source/zapps/fakeidan/src-tauri/Cargo.toml
-          npm run test:release --prefix source/zapps/fakeidan
-          npm run typecheck --prefix source/zapps/fakeidan
-          npm run build --prefix source/zapps/fakeidan
-          cargo test --locked --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml
-          cargo clippy --locked --all-targets --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml -- -D warnings
-          cargo fmt --all --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml -- --check
+          npm --prefix "$SOURCE_APP_DIR" audit --omit=dev --audit-level=moderate
+          node release-repository/scripts/audit-macos-cargo.mjs "$SOURCE_APP_DIR/src-tauri/Cargo.toml"
+          npm run test:release --prefix "$SOURCE_APP_DIR"
+          npm run typecheck --prefix "$SOURCE_APP_DIR"
+          npm run build --prefix "$SOURCE_APP_DIR"
+          cargo test --locked --manifest-path "$SOURCE_APP_DIR/src-tauri/Cargo.toml"
+          cargo clippy --locked --all-targets --manifest-path "$SOURCE_APP_DIR/src-tauri/Cargo.toml" -- -D warnings
+          cargo fmt --all --manifest-path "$SOURCE_APP_DIR/src-tauri/Cargo.toml" -- --check
 
       - name: Write and verify the FakeIdan release configuration
         env:
           FAKEIDAN_UPDATE_CHANNEL: ${{ needs.validate.outputs.channel }}
           FAKEIDAN_VERSION: ${{ needs.validate.outputs.version }}
-        working-directory: source/zapps/fakeidan
+        working-directory: ${{ env.SOURCE_APP_DIR }}
         run: |
           set -euo pipefail
           npm run release:config
@@ -421,7 +426,7 @@ jobs:
         env:
           FAKEIDAN_UPDATE_CHANNEL: ${{ needs.validate.outputs.channel }}
           FAKEIDAN_VERSION: ${{ needs.validate.outputs.version }}
-        working-directory: source/zapps/fakeidan
+        working-directory: ${{ env.SOURCE_APP_DIR }}
         run: |
           set -euo pipefail
           npm run tauri:build -- \
@@ -433,7 +438,7 @@ jobs:
             --config src-tauri/tauri.release.conf.json
 
       - name: Verify the exact bundled FakeIdan release assets
-        working-directory: source/zapps/fakeidan
+        working-directory: ${{ env.SOURCE_APP_DIR }}
         shell: bash
         run: |
           set -euo pipefail
@@ -455,7 +460,7 @@ jobs:
           FAKEIDAN_RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
           FAKEIDAN_SOURCE_SHA: ${{ needs.validate.outputs.source_sha }}
           FAKEIDAN_UPDATE_CHANNEL: ${{ needs.validate.outputs.channel }}
-        working-directory: source/zapps/fakeidan
+        working-directory: ${{ env.SOURCE_APP_DIR }}
         shell: bash
         run: |
           set -euo pipefail
@@ -509,7 +514,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fakeidan-v2-unsigned-source-stage
-          path: source/zapps/fakeidan/dist/source-stage/*
+          path: ${{ env.SOURCE_APP_DIR }}/dist/source-stage/*
           if-no-files-found: error
           retention-days: 1
           compression-level: 0

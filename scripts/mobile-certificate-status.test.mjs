@@ -53,6 +53,7 @@ await appendFile(process.env.CERTIFICATE_WORKFLOW_RECEIPTS, JSON.stringify({ ver
         JAVA_HOME_17_X64: path.join(directory, 'jdk-fixture'),
         ANDROID_SDK_ROOT: sdk,
         GITHUB_WORKSPACE: directory,
+        SOURCE_APP_DIR: "source/zapps/zergbot",
         SOURCE_SHA: 'a'.repeat(40),
         VERSION: '0.3.4',
         UPGRADE_VERSION: '0.3.5',

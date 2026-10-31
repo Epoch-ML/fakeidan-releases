@@ -14,6 +14,7 @@ const requiredFiles = [
   "scripts/anchored-policy.mjs",
   "scripts/repository-preflight.mjs",
   "scripts/workflow-policy.mjs",
+  "scripts/source-app-path.mjs",
 ];
 
 describe("FakeIdan public release boundary", () => {
@@ -22,7 +23,7 @@ describe("FakeIdan public release boundary", () => {
     assert.deepEqual(missing, [], `missing release-boundary files: ${missing.join(", ")}`);
 
     const workflow = readFileSync(".github/workflows/release.yml", "utf8");
-    assert.match(workflow, /zapps\/fakeidan/);
+    assert.match(workflow, /source-app-path\.mjs/);
     assert.match(workflow, /fakeidan-preview-updater/);
     assert.match(workflow, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{VERSION\}_aarch64\.app\.tar\.gz/);
   });

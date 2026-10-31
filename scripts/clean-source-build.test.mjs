@@ -13,13 +13,13 @@ const workflow = parse(await readFile(
 ));
 const buildSteps = workflow.jobs["build-macos"].steps;
 
-async function runDependencyStep({ failClientBuild = false } = {}) {
+async function runDependencyStep({ failClientBuild = false, sourceName = "fakeidan" } = {}) {
   const directory = await mkdtemp(join(tmpdir(), "fakeidan-clean-source-"));
   try {
     await mkdir(join(directory, "bin"));
     await mkdir(join(directory, "release-repository"));
     await mkdir(join(directory, "source/zapps/zergbox/client"), { recursive: true });
-    await mkdir(join(directory, "source/zapps/fakeidan/scripts/mobile-tools"), { recursive: true });
+    await mkdir(join(directory, `source/zapps/${sourceName}/scripts/mobile-tools`), { recursive: true });
     // npm is the process boundary: model its file-dependency link and sibling build output.
     const npm = join(directory, "bin/npm");
     await writeFile(npm, `#!${process.execPath}
@@ -41,10 +41,10 @@ if (prefix.endsWith("/source/zapps/zergbox") && args.includes("client:build")) {
   await writeFile(resolve(prefix, "client/package.json"), JSON.stringify({ type: "module", exports: "./dist/index.js" }));
   await writeFile(resolve(prefix, "client/dist/index.js"), 'export const projectionName = name => "projection:" + name;');
 }
-if (prefix.endsWith("/source/zapps/fakeidan/scripts/mobile-tools") && args.includes("ci")) {
+if (prefix.endsWith("/source/zapps/${sourceName}/scripts/mobile-tools") && args.includes("ci")) {
   await writeFile(resolve(prefix, "runtime-closure.json"), JSON.stringify({ yaml: "2.9.1", pngjs: "7.0.0" }));
 }
-if (prefix.endsWith("/source/zapps/fakeidan") && args.includes("ci")) {
+if (prefix.endsWith("/source/zapps/${sourceName}") && args.includes("ci")) {
   let closure = {};
   try { closure = JSON.parse(await readFile(resolve(prefix, "scripts/mobile-tools/runtime-closure.json"), "utf8")); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
@@ -66,6 +66,7 @@ if (prefix.endsWith("/source/zapps/fakeidan") && args.includes("ci")) {
         ...process.env,
         PATH: `${join(directory, "bin")}:${process.env.PATH}`,
         FAIL_CLIENT_BUILD: String(failClientBuild),
+        SOURCE_APP_DIR: `source/zapps/${sourceName}`,
       },
       encoding: "utf8",
       timeout: 10_000,
@@ -106,3 +107,5 @@ test("source app preparation installs the locked mobile fixture runtime before r
   const line = result.stdout.split("\n").find(value => value.startsWith("mobile-tools:"));
   assert.deepEqual(JSON.parse(line.slice("mobile-tools:".length)), { yaml: "2.9.1", pngjs: "7.0.0" });
 });
+
+ test("the renamed pristine app resolves the same locked sibling client and mobile closure",async()=>{const result=await runDependencyStep({sourceName:"zergbot"});assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/^projection:qualified-source$/m);assert.match(result.stdout,/mobile-tools:.*yaml/);});

@@ -90,7 +90,7 @@ if (args[0] === "metadata") {
     for (const name of ["npm", "rustc", "cargo"]) await chmod(join(directory, "bin", name), 0o755);
     const result = spawnSync("bash", ["-c", auditStep.run], {
       cwd: directory,
-      env: { ...process.env, PATH: `${join(directory, "bin")}:${process.env.PATH}`, RUNNER_TEMP: directory, TARGET_METADATA: join(directory, "metadata.json"), HOST_METADATA: join(directory, "host-metadata.json") },
+      env: { ...process.env, SOURCE_APP_DIR: "source/zapps/fakeidan", PATH: `${join(directory, "bin")}:${process.env.PATH}`, RUNNER_TEMP: directory, TARGET_METADATA: join(directory, "metadata.json"), HOST_METADATA: join(directory, "host-metadata.json") },
       encoding: "utf8",
       timeout: 10_000,
     });

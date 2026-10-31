@@ -46,7 +46,7 @@ describe("FakeIdan source-build release contract", () => {
     const install = requireStep(build, "Install locked dependencies and security tooling");
     assert.match(
       install.run,
-      /^\s*npm ci --prefix source\/zapps\/fakeidan\s*$/m,
+      /^\s*npm ci --prefix "\$SOURCE_APP_DIR"\s*$/m,
     );
     assert.doesNotMatch(install.run, /source\/ztc|zapps\/fakeidan\/scripts\/release/);
     assert.doesNotMatch(
@@ -59,8 +59,8 @@ describe("FakeIdan source-build release contract", () => {
     assert.equal(sourceGate["working-directory"], undefined);
     assert.equal(sourceGate.env, undefined);
     const orderedNativeGate = [
-      "npm --prefix source/zapps/fakeidan audit --omit=dev --audit-level=moderate",
-      "npm run test:release --prefix source/zapps/fakeidan",
+      "npm --prefix \"$SOURCE_APP_DIR\" audit --omit=dev --audit-level=moderate",
+      "npm run test:release --prefix \"$SOURCE_APP_DIR\"",
     ];
     const gateIndexes = orderedNativeGate.map((command) => {
       assert.equal(
@@ -75,11 +75,11 @@ describe("FakeIdan source-build release contract", () => {
       "the production source audit must precede release tests",
     );
     for (const command of [
-      "npm run typecheck --prefix source/zapps/fakeidan",
-      "npm run build --prefix source/zapps/fakeidan",
-      "cargo test --locked --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml",
-      "cargo clippy --locked --all-targets --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml -- -D warnings",
-      "cargo fmt --all --manifest-path source/zapps/fakeidan/src-tauri/Cargo.toml -- --check",
+      "npm run typecheck --prefix \"$SOURCE_APP_DIR\"",
+      "npm run build --prefix \"$SOURCE_APP_DIR\"",
+      "cargo test --locked --manifest-path \"$SOURCE_APP_DIR/src-tauri/Cargo.toml\"",
+      "cargo clippy --locked --all-targets --manifest-path \"$SOURCE_APP_DIR/src-tauri/Cargo.toml\" -- -D warnings",
+      "cargo fmt --all --manifest-path \"$SOURCE_APP_DIR/src-tauri/Cargo.toml\" -- --check",
     ]) {
       assert.ok(sourceGate.run.includes(command), `source gate must execute ${command}`);
     }
@@ -132,7 +132,7 @@ describe("FakeIdan source-build release contract", () => {
       );
     }
     for (const token of [
-      "source/zapps/fakeidan/src-tauri/tauri.conf.json",
+      "${SOURCE_APP_DIR}/src-tauri/tauri.conf.json",
       "config.productName",
       "process.env.PACKAGING_SOURCE_PRODUCT_NAME",
       "config.identifier",
@@ -141,7 +141,7 @@ describe("FakeIdan source-build release contract", () => {
       "Info.plist",
       "cmp --silent",
       "macos/FakeIdan.entitlements.plist",
-      "source/zapps/fakeidan/src-tauri/Entitlements.plist",
+      "${SOURCE_APP_DIR}/src-tauri/Entitlements.plist",
     ]) {
       assert.ok(binding.run.includes(token), `desktop binding must enforce ${token}`);
     }
@@ -151,7 +151,7 @@ describe("FakeIdan source-build release contract", () => {
   it("generates the fail-closed production config without a mutable updater flag", () => {
     const build = requireJob("build-macos");
     const config = requireStep(build, "Write and verify the FakeIdan release configuration");
-    assert.equal(config["working-directory"], "source/zapps/fakeidan");
+    assert.equal(config["working-directory"], "${{ env.SOURCE_APP_DIR }}");
     assert.deepEqual(config.env, {
       FAKEIDAN_UPDATE_CHANNEL: "${{ needs.validate.outputs.channel }}",
       FAKEIDAN_VERSION: "${{ needs.validate.outputs.version }}",
@@ -170,12 +170,12 @@ describe("FakeIdan source-build release contract", () => {
     assert.equal(toolchain.run.match(/--target aarch64-apple-darwin/g)?.length, 1);
 
     const appBuild = requireStep(build, "Build the unsigned app without release signing credentials");
-    assert.equal(appBuild["working-directory"], "source/zapps/fakeidan");
+    assert.equal(appBuild["working-directory"], "${{ env.SOURCE_APP_DIR }}");
     assert.match(appBuild.run, /--target aarch64-apple-darwin/);
     assert.match(appBuild.run, /--config src-tauri\/tauri\.release\.conf\.json/);
 
     const stage = requireStep(build, "Package a bounded unsigned source stage");
-    assert.equal(stage["working-directory"], "source/zapps/fakeidan");
+    assert.equal(stage["working-directory"], "${{ env.SOURCE_APP_DIR }}");
     assert.match(stage.run, /target\/aarch64-apple-darwin\/release\/bundle/);
     assert.match(stage.run, /\$\{PACKAGING_ASSET_PREFIX\}_\$\{FAKEIDAN_DESKTOP_VERSION\}_aarch64\.source\.app\.tar\.gz/);
     assert.match(stage.run, /platform: "darwin-aarch64"/);
